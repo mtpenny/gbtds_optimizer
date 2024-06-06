@@ -170,13 +170,22 @@ for path in idxpaths:
         
 #Compute tables of cadence vs exposure time for choices of each
 sdp = lambda x: "%.1f" % x
+tdp = lambda x: "%.2f" % x
 
 cadence1 = np.arange(10,21)
 texp1 = (cadence1*60 - minslew)/nfields
+alpha = 0.399 #Delta chi^2 power law scaling
 
-table1 = [["Choose cadence",""],["Cadence(min)","Texp(s)"]]
+#Yield relative to Penny+19 assuming new field(s) has no microlensing events
+relyield1no = (1.0/(cadence1/15.0) * (texp1/46.8))**alpha
+#Yield relative to Penny+19 assuming new field(s) has average microlensing planet detection rate of the original 7 fields
+relyield1avg = relyield1no * (nfields/7.0)
+#print(relyield1no)
+#print(relyield1avg)
+
+table1 = [["Choose cadence","",""],["Cadence(min)","Texp(s)", "Rel. $1 M_{\oplus}$ yield"]]
 for i,c in enumerate(cadence1):
-    table1.append([sdp(c),sdp(texp1[i])])
+    table1.append([sdp(c),sdp(texp1[i]),tdp(relyield1no[i]) + "-" + tdp(relyield1avg[i])])
 
 #plt.figure()
 
@@ -184,9 +193,21 @@ for i,c in enumerate(cadence1):
 texp2 = np.arange(14,25)*3.04
 cadence2 = (texp2*nfields + minslew)/60.0
 
-table2 = [["Choose Texp",""],["Texp(s)","Cadence(min)"]]
+#Yield relative to Penny+19 assuming new field(s) has no microlensing events
+relyield2no = (1.0/(cadence2/15.0) * (texp2/46.8))**alpha
+#Yield relative to Penny+19 assuming new field(s) has average microlensing planet detection rate of the original 7 fields
+relyield2avg = relyield2no * (nfields/7.0)
+#print(relyield1no)
+#print(relyield1avg)
+
+table1 = [["Choose cadence","",""],["Cadence(min)","Texp(s)", "Rel. $1 M_{\oplus}$ yield"]]
+for i,c in enumerate(cadence1):
+    table1.append([sdp(c),sdp(texp1[i]),tdp(relyield1no[i]) + "-" + tdp(relyield1avg[i])])
+
+
+table2 = [["Choose Texp","",""],["Texp(s)","Cadence(min)", "Rel. $1 M_{\oplus}$ yield"]]
 for i,t in enumerate(texp2):
-    table2.append([sdp(t),sdp(cadence2[i])])
+    table2.append([sdp(t),sdp(cadence2[i]),tdp(relyield2no[i]) + "-" + tdp(relyield2avg[i])])
 
 print("Best combined slew time:",minslew)
 print("Best average slew time per field:",minslew/nfields)
@@ -224,7 +245,7 @@ ax3.table(cellText=table2,loc="center",fontsize=24,colLoc='center')
 fig.text(0.5,0.9,fieldsFile + " - " + shortSlewFile,fontsize=14,ha='center')
 fig.text(0.85,0.85,"Total slew time: %.1f s" % minslew,fontsize=12,ha='right')
 fig.text(0.85,0.8,"Average slew time per field: %.1f s" % (minslew/nfields),fontsize=12,ha='right')
-fig.text(0.85,0.75,"Best path: %s" % (fieldNames[bestpath].str.cat(sep=' ')),fontsize=12,ha='right')
+fig.text(0.85,0.75,"Best path: %s" % (fieldNames[bestpath].astype(str).str.cat(sep=' ')),fontsize=12,ha='right')
 fig.tight_layout()
 
 plt.savefig(fieldsFile + ".pdf")
