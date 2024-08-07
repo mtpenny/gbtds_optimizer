@@ -27,6 +27,7 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 from scipy.interpolate import interp1d
 from itertools import permutations
+from fields import fov
 
 #Options
 plotSlew = False
@@ -42,6 +43,8 @@ nfields = fields.shape[0]
 if debug==True:
     print(l,b)
 coords = SkyCoord(l,b,frame='galactic',unit='deg')
+
+fix=True
 
 if debug==True:
     print(coords)
@@ -161,7 +164,9 @@ bestpath = np.array([])
 for path in idxpaths:
     #roll shifts elements in array with wrapping
     #This also includes the return to start slew
-    pathtime = np.sum(slewTimes[path,np.roll(path,1)]) 
+    pathtime = np.sum(slewTimes[path,np.roll(path,1)])
+    if fix:
+        print(path,pathtime,np.roll(slewTimes[path,np.roll(path,1)],-1))
     
     if pathtime<minslew:
         minslew = pathtime
@@ -219,11 +224,16 @@ cycle = np.append(bestpath,bestpath[0])
 #Plot the field layout and best path, and the tables
 fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(10,6))
 
+scas = fov('sca_layout.txt')
+
+
 #Figure with path
 ax1.plot(l,b,'ko',ms=5)
 ax1.plot(l[cycle],b[cycle],'k-')
 for i in range(len(l)): 
     ax1.annotate(fieldNames[i], (l[i], b[i] + 0.02))
+    for chip in range(scas.nChips):
+        ax1.plot(scas.delta_l[chip]+l[i],scas.delta_b[chip]+b[i],'k-',lw=0.5)
 
 ax1.axis('square')
 ax1.invert_xaxis()
