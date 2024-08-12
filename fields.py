@@ -6,6 +6,7 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 from scipy.interpolate import interp1d
 from itertools import permutations
+import sys
 import copy
 
 class fov:
@@ -160,6 +161,8 @@ class fovHandler:
         Returns totalYield, totalArea(map pixels), totalArea(deg**2)
         '''
 
+        debug=False
+
         try:
             self.yieldMap
         except:
@@ -189,20 +192,20 @@ class fovHandler:
         totalYield=0
         totalArea=0
 
-        if self.debug:
+        if debug:
             print(lidx)
             print(bidx)
 
         for i, s in enumerate(slices):
-            if self.debug:
+            if debug:
                 print(s)
                 print(lidx[s].tolist())
                 print(type(bidx[s]))
-                print(lidx[s],self.yieldMap.lmap[bidx[s],lidx[s]])
-                print(bidx[s],self.yieldMap.bmap[bidx[s],lidx[s]])
+                print(lidx[s],ym.lmap[bidx[s],lidx[s]])
+                print(bidx[s],ym.bmap[bidx[s],lidx[s]])
                 print(area[s],ym.yieldmap[bidx[s],lidx[s]])
                 print(f'total area for polygon {i}={np.sum(area[s])}')
-                print(f'total yield for polygon {i}={np.sum(area[s]*lbmap_working.yieldmap[bidx[s],lidx[s]])}')
+                print(f'total yield for polygon {i}={np.sum(area[s]*ym.yieldmap[bidx[s],lidx[s]])}')
             totalArea += np.sum(area[s])
             totalYield += np.sum(
                 area[s]*ym.yieldmap[bidx[s],
@@ -215,13 +218,13 @@ class fovHandler:
 
 class slewOptimizer:
 
-    def __init__(self, shortSFile, diagSFile=None, longSFile=None, debug_=False):
+    def __init__(self, shortSFile, diagSFile=None, longSFile=None, debug=False):
 
         #Load the slew time files
         self.shortSlewFile = shortSFile
         self.diagSlewFile = self.shortSlewFile
         self.longSlewFile = self.shortSlewFile
-        self.debug=debug_
+        self.debug=debug
 
         if diagSFile is not None:
             self.diagSlewFile = diagSFile
@@ -273,6 +276,13 @@ class slewOptimizer:
 
             
     def optimizePath(self,centers,fixPath=False):
+        '''
+        Find the optimal path through the field centers and return the total 
+        overhead and the best path through the fields. if fixPath=True, just 
+        compute the overhead for the path through the field in the order given.
+        '''
+
+        debug=False
 
         fieldNames = centers['field']
         l = centers['l']
@@ -280,7 +290,8 @@ class slewOptimizer:
         fixed = centers['fixed'].str.contains('fixed')
         nfields = centers.shape[0]
         if self.debug==True:
-            print(l,b)
+            print('l:',' '.join(l.astype(str)))
+            print('b:',' '.join(b.astype(str)))
         coords = SkyCoord(l,b,frame='galactic',unit='deg')
 
         #Construct the distance matrix of distances between two fields
@@ -300,7 +311,7 @@ class slewOptimizer:
         masks = [shortmask,diagmask,longmask]
         slewType[diagmask] = 1
         slewType[longmask] = 2
-        if self.debug==True:
+        if debug==True:
             print(sep)
             print(angle)
             print(slewType)
@@ -311,7 +322,7 @@ class slewOptimizer:
         slewTimes[diagmask] = self.diagSlewFn(sep[diagmask])
         slewTimes[longmask] = self.longSlewFn(sep[longmask])
 
-        if self.debug==True:
+        if debug==True:
             print(slewTimes)
 
         # Next task is to compute all possible paths through each field once, then
@@ -320,16 +331,19 @@ class slewOptimizer:
 
         #Construct the permutations of the path through the fields 
 
+        if fixPath:
+            idxpaths = np.array([range(nfields)])
+        else:
+            idxpaths = self.faster_cyc_permutations(nfields)
 
-        idxpaths = self.faster_cyc_permutations(nfields)
-        if self.debug==True:
+        if self.debug:
             print(idxpaths.shape)
             print(idxpaths)
 
-        if self.debug==True:
-            np.set_printoptions(threshold=sys.maxsize)
-            print(idxpaths)
-            np.set_printoptions(threshold=20)
+        #if self.debug:
+        #    np.set_printoptions(threshold=sys.maxsize)
+        #    print(idxpaths)
+        #    np.set_printoptions(threshold=20)
 
 
         #Find the path that gives the shortest slewtimes 
@@ -339,8 +353,8 @@ class slewOptimizer:
             #roll shifts elements in array with wrapping
             #This also includes the return to start slew
             pathtime = np.sum(slewTimes[path,np.roll(path,1)])
-            if fixPath:
-                print(path,pathtime,np.roll(slewTimes[path,np.roll(path,1)],-1))
+            if self.debug:
+                print(' '.join(fieldNames[path]),pathtime,np.roll(slewTimes[path,np.roll(path,1)],-1))
     
             if pathtime<minslew:
                 minslew = pathtime

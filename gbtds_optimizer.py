@@ -26,27 +26,27 @@ from yieldMap import yieldMap
 #indicated.
 
 parser = argparse.ArgumentParser(description="Optimizer for the Roman Galactic Bulge Time Domain Survey")
-parser.add_argument('YieldMap_Filename',
+parser.add_argument('yieldmap_filename',
                     help='File name for the yield map')
-parser.add_argument('Cadence0',type=float,
+parser.add_argument('map_cadence',type=float,
                     help='Cadence the map was computed for, in minutes')
-parser.add_argument('texp0',type=float,
+parser.add_argument('map_texp',type=float,
                     help='Exposure time the map was computed for, in seconds')
-parser.add_argument('--Cadence_Bounds',nargs=2,default=[5.0,16.0],
+parser.add_argument('fields_filename',
+                    help='File containing the field specifications (columns: name l b fixed?)')
+parser.add_argument('--cadence-bounds',nargs=2,default=[5.0,16.0],
                     help='Bounds on the cadence to be considered')
-parser.add_argument('--NRead_Bounds',nargs=2,default=[6,30],
+parser.add_argument('--nread-bounds',nargs=2,default=[6,30],
                     help='Bounds on the number of reads in an exposure')
 #parser.add_argument('--dYdCadence',default=1.0,
 #                    help='Map filename with the same shape as yieldMap or a numerical value of dY/dCadence')
 #parser.add_argument('--dYdtexp',default=1.0,
 #                    help='Map filename with the same shape as yieldMap or a numerical value of dY/dtexp')
-parser.add_argument('--alphaCadence',default=None,type=str,
+parser.add_argument('--alpha-cadence',default=None,type=str,
                     help='The power law slope of the yield as a function of Cadence, with input as a map filename with the same shape as yieldMap or a single numerical value')
-parser.add_argument('--alphaTexp',default=None,type=str,
+parser.add_argument('--alpha-texp',default=None,type=str,
                     help='The power law slope of the yield as a function of Texp, with input as a map filename with the same shape as yieldMap or a single numerical value')
-parser.add_argument('Fields_Filename',
-                    help='File containing the field specifications (columns: name l b fixed?)')
-parser.add_argument('--SCA_Filename',default='sca_layout.txt',
+parser.add_argument('--sca-filename',default='sca_layout.txt',
                     help='Filename of the sca vertices')
 parser.add_argument('--roll',default=0.0,choices=[0.0,180.0],type=float,
                     help='Roll angle of the SCA layout. Options are 0 and 180')
@@ -58,24 +58,28 @@ parser.add_argument('--brange',nargs=2,default=[-3.0,0.0],type=float,
                     help='Range of b in the grid')
 parser.add_argument('--bstep',default=0.01,type=float,
                     help='Stepsize of the b grid')
-parser.add_argument('--readTime',default=3.04,type=float,
+parser.add_argument('--read-time',default=3.04,type=float,
                     help='Time between up-the-ramp reads of a pixel in seconds')
 
-parser.add_argument('--SlewRatesShortFoV_Filename',nargs=1,
+parser.add_argument('--slew-rates-short-fov-filename',nargs=1,
                     default='slew_times_withResetReference_McEnery05232024.txt',
                     help='Filename for the short FoV slew and settle times')
-parser.add_argument('--SlewRatesDiagonalFoV_Filename',nargs=1,default=None,
+parser.add_argument('--slew-rates-diagonal-fov-filename',nargs=1,default=None,
                     help='Filename for the diagonal FoV slew and settle times')
-parser.add_argument('--SlewRatesLongFoV_Filename',nargs=1,default=None,
+parser.add_argument('--slew-rates-long-fov-filename',nargs=1,default=None,
                     help='Filename for the long FoV slew and settle times')
 
-parser.add_argument('--testyield',default=False,
+parser.add_argument('--test-yield',default=False,
                     help='Compute the yield for the input fields as a test')
-parser.add_argument('--testplot',default=False,
+parser.add_argument('--test-plot',default=False,
                     help='Plot the layout of the input fields on the map a test')
 
-parser.add_argument('--output_root',default='test',
+parser.add_argument('--output-root',default='test',
                     help='Filename root for output')
+parser.add_argument('--fix-path',action='store_true',
+                    help='Do not optimize path through fields. This can potentially speed up calculations if the optimum path is obvious and fields are in the correct order in the fields file.')
+parser.add_argument('--debug',action='store_true',
+                    help='Turn on debugging output')
 
 args = parser.parse_args()
 
@@ -83,30 +87,30 @@ lstep = args.lstep; bstep = args.bstep;
 lrange = args.lrange; brange = args.brange
 
 #Load the yieldMap and its derivatives
-ym = yieldMap(args.YieldMap_Filename)
+ym = yieldMap(args.yieldmap_filename)
 
 #Load the power laws if needed
 #Process some arguments
-if args.alphaCadence is not None:
+if args.alpha_cadence is not None:
     try:
-        alphaC = float(args.alphaCadence)
+        alphaC = float(args.alpha_cadence)
     except ValueError:
         try:
-            alphaCadence = args.alphaCadence
-            if args.alphaCadence == 'same':
-                alphaCadence=args.YieldMap_Filename
+            alphaCadence = args.alpha_cadence
+            if args.alpha_cadence == 'same':
+                alphaCadence=args.yieldmap_filename
             alphaC = pd.read_csv(alphaCadence,sep='\s+',usecols=['l','b','alphaCadence'])['alphaCadence']
         except:
             raise RuntimeError('Error reading alphaCadence file (%s)' % (alphaCadence))
 
-if args.alphaTexp is not None:
+if args.alpha_texp is not None:
     try:
-        alphaT = float(args.alphaTexp)
+        alphaT = float(args.alpha_texp)
     except ValueError:
         try:
-            alphaTexp = args.alphaTexp
-            if args.alphaTexp == 'same':
-                alphaTexp=args.YieldMap_Filename
+            alphaTexp = args.alpha_texp
+            if args.alpha_texp == 'same':
+                alphaTexp=args.yieldmap_filename
             alphaT = pd.read_csv(alphaTexp,sep='\s+',usecols=['l','b','alphaTexp'])['alphaTexp']
         except:
             raise RuntimeError('Error reading alphaTexp file (%s)' % (alphaTexp))
@@ -114,16 +118,16 @@ if args.alphaTexp is not None:
 
 
 #Load the field vertices
-romanFoV = fov(args.SCA_Filename,unit='deg')
+romanFoV = fov(args.sca_filename,unit='deg')
 
 try:
-    fields = pd.read_csv(args.Fields_Filename,sep='\s+',header=None,names=['field','l','b','fixed'],
+    fields = pd.read_csv(args.fields_filename,sep='\s+',header=None,names=['field','l','b','fixed'],
                          dtype={'field':str,'l':float,'b':float,'fixed':str})
 except:
     try:
-        fields = pd.read_csv(args.Fields_Filename,sep='\s+')
+        fields = pd.read_csv(args.fields_filename,sep='\s+')
     except:
-        raise RuntimeError('Error reading fields file (%s) - file does not exist or is in an incorrect format. It should containt the named columns ["field","l","b","fixed"] or 4 unnamed columns' % (args.Fields_Filename))
+        raise RuntimeError('Error reading fields file (%s) - file does not exist or is in an incorrect format. It should containt the named columns ["field","l","b","fixed"] or 4 unnamed columns' % (args.fields_filename))
 
 print("Using fields:")
 print(fields)
@@ -143,13 +147,13 @@ if nfixed>0:
 #Create an fovHandler object and initialize it with the yield map, field
 #of view and fields
 handler = fovHandler()
-handler.fromCentersChips(fields,romanFoV,ym)
+handler.fromCentersChips(fields,romanFoV,ym,debug=args.debug)
 
 #Create a slewOptimizer object and initialize it with the slew times
-slewopt = slewOptimizer(args.SlewRatesShortFoV_Filename,args.SlewRatesDiagonalFoV_Filename,args.SlewRatesLongFoV_Filename)
+slewopt = slewOptimizer(args.slew_rates_short_fov_filename,args.slew_rates_diagonal_fov_filename,args.slew_rates_long_fov_filename,debug=args.debug)
 
 #Compute the yield for the input fields to test that everything is working.
-if args.testyield or args.testplot or allfixed:
+if args.test_yield or args.test_plot or allfixed:
     totalYield, totalAreaPix, totalArea = handler.computeYield()
     print("Testing the yield computation.")
     print("Total yield:",totalYield)
@@ -172,8 +176,8 @@ if args.testyield or args.testplot or allfixed:
 
 
 #Store the originals
-Cadence0 = args.Cadence0 + 0
-texp0 = args.texp0 + 0
+Cadence0 = args.map_cadence + 0
+texp0 = args.map_texp + 0
 pathOverhead=0
 
 if allfixed or allfree:
@@ -182,14 +186,14 @@ if allfixed or allfree:
     #except NotImplementedError:
     #    raise('Special case handling for allfixed or allfree not ')
     print("allfixed or allfree")
-    handler.fromCentersChips(fields,romanFoV,ym)
-    pathOverhead,bestPath = slewopt.optimizePath(fields)
+    handler.fromCentersChips(fields,romanFoV,ym,debug=args.debug)
+    pathOverhead,bestPath = slewopt.optimizePath(fields,fixPath=args.fix_path)
 
     
 if allfixed:
-    cadence = (nread*args.readTime*Nfields+pathOverhead)/60.0
-    handler.scaleMap(cadence,args.Cadence0,alphaC,
-                     nread*args.readTime,args.texp0,alphaT)
+    cadence = (nread*args.read_time*Nfields+pathOverhead)/60.0
+    handler.scaleMap(cadence,Cadence0,alphaC,
+                     nread*args.read_time,texp0,alphaT)
     totalYield, totalAreaPix, totalArea = handler.computeYield()
     print("Total yield:",totalYield)
     print("Total area (map pixels):",totalAreaPix)
@@ -230,21 +234,21 @@ for index,l in np.ndenumerate(lgrid):
     #print("after")
     #print(fieldsNew)
     #print("")
-    handler.fromCentersChips(fieldsNew,romanFoV,ym)
+    handler.fromCentersChips(fieldsNew,romanFoV,ym,debug=args.debug)
     if not allfree:
         #Recompute the path overhead if the distance between fields has
         #changed
-        pathOverhead,bestPath = slewopt.optimizePath(fieldsNew)
+        pathOverhead,bestPath = slewopt.optimizePath(fieldsNew,fixPath=args.fix_path)
     bestYield=-1e50
     bestCadence = np.nan
     bestNread = np.nan
-    for nread in range(args.NRead_Bounds[0],args.NRead_Bounds[1]+1):
-        cadence = (nread*args.readTime*Nfields+pathOverhead)/60.0
+    for nread in range(args.nread_bounds[0],args.nread_bounds[1]+1):
+        cadence = (nread*args.read_time*Nfields+pathOverhead)/60.0
         #print(cadence)
-        if args.Cadence_Bounds[0]<=cadence<args.Cadence_Bounds[1]:
+        if args.cadence_bounds[0]<=cadence<args.cadence_bounds[1]:
             #Modify yieldMap for nread,cadence
-            handler.scaleMap(cadence,args.Cadence0,alphaC,
-                             nread*args.readTime,args.texp0,alphaT)
+            handler.scaleMap(cadence,Cadence0,alphaC,
+                             nread*args.read_time,texp0,alphaT)
             #Compute the yield
             totalYield, totalAreaPix, totalArea = handler.computeYield()
             if totalYield > bestYield:
@@ -260,11 +264,11 @@ for index,l in np.ndenumerate(lgrid):
     cadencegrid[index] = bestCadence
     nreadgrid[index] = bestNread
     yieldgrid[index] = bestYield
-    print(l,b,bestNread*args.readTime,bestCadence,bestYield)
+    print(l,b,bestNread*args.read_time,bestCadence,bestYield)
     testfile.write("%g %g %d %g %g\n" % (l,b,bestNread,bestCadence,bestYield))
 
 
-handler.fromCentersChips(allBestFields,romanFoV,ym)
+handler.fromCentersChips(allBestFields,romanFoV,ym,debug=args.debug)
 print("Best yield: ",allBestYield)
 print("Best fields:")
 print(allBestFields)
