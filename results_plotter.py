@@ -95,8 +95,6 @@ ax.clabel(contour_set)
 
 plt.colorbar(ymap,ax=ax,label='Yield per map tile')
 
-if not args.no_show:
-    plt.show()
 if not args.save==False:
     save_root = args.save_root
     if save_root=='':
@@ -104,3 +102,6 @@ if not args.save==False:
     savename=save_root + '_plot.' + args.save
     print("Saving to",savename)
     plt.savefig(savename)
+
+if not args.no_show:
+    plt.show()
