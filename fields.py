@@ -90,17 +90,13 @@ class fovHandler:
     #    Build a set of vertices from the
 
     def fromCentersChips(self,centers,chips,yieldMap,
-                         centers_kwargs={'sep':'\s+',
-                                         'names':['field',
-                                                  'l',
-                                                  'b'],
-                                         'header':None},
+                         centers_kwargs={'sep':'\s+'},
                          debug=False):
         '''
         Build vertices from a centers object (representing field
         centers) and a chips object (representing the corners of
         the chips/SCAs in a field of view). Centers should be a
-        pandas dataframe with columns 'field','l','b', chips 
+        pandas dataframe with columns 'field','l','b',{'fixed'} chips 
         should be a pandas data frame with columns 'chip','delta_l', 'delta_b'
         '''
 
@@ -116,6 +112,12 @@ class fovHandler:
                 centers = pd.read_csv(centers,**centers_kwargs)
             except:
                 raise RuntimeError('Error reading field centers file (%s)' % (centers))
+
+        if not set(['l','b','field','fixed']).issubset(centers.columns):
+            if set(['l','b','field']).issubset(centers.columns):
+                centers['fixed']=0
+            else:
+                raise "centers is not a dataframe containing at least the columns 'l','b', and 'field'"
 
         #print(centers)
 
@@ -208,8 +210,7 @@ class fovHandler:
                 print(f'total yield for polygon {i}={np.sum(area[s]*ym.yieldmap[bidx[s],lidx[s]])}')
             totalArea += np.sum(area[s])
             totalYield += np.sum(
-                area[s]*ym.yieldmap[bidx[s],
-                                    lidx[s]]*ym.lspacing*ym.bspacing)
+                area[s]*ym.yieldmap[bidx[s],lidx[s]])
         if self.debug:
             print(totalArea,totalArea*ym.lspacing*ym.bspacing,totalYield)
 
@@ -287,7 +288,8 @@ class slewOptimizer:
         fieldNames = centers['field']
         l = centers['l']
         b = centers['b']
-        fixed = centers['fixed'].str.contains('fixed')
+        #fixed = centers['fixed'].str.contains('fixed')
+        fixed = centers['fixed']
         nfields = centers.shape[0]
         if self.debug==True:
             print('l:',' '.join(l.astype(str)))

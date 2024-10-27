@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description="Optimizer for the Roman Galactic B
 parser.add_argument('yieldmap_filename',
                     help='File name for the yield map')
 parser.add_argument('fields_filename',
-                    help='File containing the field specifications (columns: name l b fixed?)')
+                    help='File containing the field specifications (columns: name l b fixed)')
 parser.add_argument('--sca-filename',default='sca_layout.txt',
                     help='Filename of the sca vertices')
 args = parser.parse_args()
@@ -25,7 +25,7 @@ romanFoV = fov(args.sca_filename,unit='deg')
 
 try:
     fields = pd.read_csv(args.fields_filename,sep='\s+',header=None,names=['field','l','b','fixed'],
-                         dtype={'field':str,'l':float,'b':float,'fixed':str})
+                         dtype={'field':str,'l':float,'b':float,'fixed':int})
 except:
     try:
         fields = pd.read_csv(args.fields_filename,sep='\s+')

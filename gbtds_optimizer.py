@@ -25,7 +25,9 @@ from yieldMap import yieldMap
 #so the most useful output is a contour map of the yield with a maximum
 #indicated.
 
-parser = argparse.ArgumentParser(description="Optimizer for the Roman Galactic Bulge Time Domain Survey")
+parser = argparse.ArgumentParser(prog='gbtds_optimizer',
+                                 description="Optimizer for the Roman Galactic Bulge Time Domain Survey")
+
 parser.add_argument('yieldmap_filename',
                     help='File name for the yield map')
 parser.add_argument('map_cadence',type=float,
@@ -33,10 +35,10 @@ parser.add_argument('map_cadence',type=float,
 parser.add_argument('map_texp',type=float,
                     help='Exposure time the map was computed for, in seconds')
 parser.add_argument('fields_filename',
-                    help='File containing the field specifications (columns: name l b fixed?)')
-parser.add_argument('--cadence-bounds',nargs=2,default=[5.0,16.0],
-                    help='Bounds on the cadence to be considered')
-parser.add_argument('--nread-bounds',nargs=2,default=[6,30],
+                    help='File containing the field specifications (columns: name l b fixed)')
+parser.add_argument('--cadence-bounds',nargs=2,default=[5.0,16.0],type=float,
+                    help='Bounds on the cadence to be considered default')
+parser.add_argument('--nread-bounds',nargs=2,default=[6,30],type=int,
                     help='Bounds on the number of reads in an exposure')
 #parser.add_argument('--dYdCadence',default=1.0,
 #                    help='Map filename with the same shape as yieldMap or a numerical value of dY/dCadence')
@@ -81,13 +83,20 @@ parser.add_argument('--fix-path',action='store_true',
 parser.add_argument('--debug',action='store_true',
                     help='Turn on debugging output')
 
+parser.add_argument('--yield-unit',default='per_tile',type=str,
+                    help='Units of the yield map. Options are per_deg2 or per_tile')
+
+parser.add_argument('--fix-cadence-texp',action='store_true',
+                    help='Do not adjust the cadence or exposure time from the input cadence')
+
 args = parser.parse_args()
 
 lstep = args.lstep; bstep = args.bstep;
 lrange = args.lrange; brange = args.brange
 
 #Load the yieldMap and its derivatives
-ym = yieldMap(args.yieldmap_filename)
+
+ym = yieldMap(args.yieldmap_filename,units=args.yield_unit)
 
 #Load the power laws if needed
 #Process some arguments
@@ -122,7 +131,7 @@ romanFoV = fov(args.sca_filename,unit='deg')
 
 try:
     fields = pd.read_csv(args.fields_filename,sep='\s+',header=None,names=['field','l','b','fixed'],
-                         dtype={'field':str,'l':float,'b':float,'fixed':str})
+                         dtype={'field':str,'l':float,'b':float,'fixed':int})
 except:
     try:
         fields = pd.read_csv(args.fields_filename,sep='\s+')
@@ -136,7 +145,8 @@ print(fields)
 
 allfixed = False
 allfree = True
-fixedMask = fields['fixed'].str.contains('fixed')
+#fixedMask = fields['fixed'].str.contains('fixed')
+fixedMask = fields['fixed']>0
 freeMask = np.logical_not(fixedMask)
 nfixed = fixedMask.sum()
 if nfixed==fields.shape[0]:
@@ -180,7 +190,7 @@ Cadence0 = args.map_cadence + 0
 texp0 = args.map_texp + 0
 pathOverhead=0
 
-if allfixed or allfree:
+if (allfixed or allfree) and not args.fix_cadence_texp:
     #Compute the texp and cadence of the field layout once, no need
     #to recompute
     #except NotImplementedError:
@@ -213,12 +223,20 @@ yieldgrid = np.empty(shape=lgrid.shape)
 cadencegrid = np.empty(shape=lgrid.shape)
 nreadgrid = np.empty(shape=lgrid.shape)
 
-lcenter = np.average(fields['l'])
-bcenter = np.average(fields['b'])
+#lcenter = np.average(fields['l'])
+#bcenter = np.average(fields['b'])
+if allfixed:
+    lcenter = 0.5*(np.max(fields['l'])+np.min(fields['l']))
+    bcenter = 0.5*(np.max(fields['b'])+np.min(fields['b']))
+else:
+    lcenter = 0.5*(np.max(fields.loc[freeMask,'l'])+np.min(fields.loc[freeMask,'l']))
+    bcenter = 0.5*(np.max(fields.loc[freeMask,'b'])+np.min(fields.loc[freeMask,'b']))
 Nfields = fields.shape[0]
 
 allBestFields = 0
 allBestYield = -1e50
+allBestCadence = 0
+allBestNread = 0
 
 testfile = open(args.output_root + '_results.txt','w',buffering=1)
 
@@ -242,24 +260,43 @@ for index,l in np.ndenumerate(lgrid):
     bestYield=-1e50
     bestCadence = np.nan
     bestNread = np.nan
-    for nread in range(args.nread_bounds[0],args.nread_bounds[1]+1):
-        cadence = (nread*args.read_time*Nfields+pathOverhead)/60.0
-        #print(cadence)
-        if args.cadence_bounds[0]<=cadence<args.cadence_bounds[1]:
-            #Modify yieldMap for nread,cadence
-            handler.scaleMap(cadence,Cadence0,alphaC,
-                             nread*args.read_time,texp0,alphaT)
-            #Compute the yield
-            totalYield, totalAreaPix, totalArea = handler.computeYield()
-            if totalYield > bestYield:
-                bestCadence = cadence
-                bestNread = nread
-                bestYield = totalYield
 
-            if totalYield > allBestYield:
-                allBestYield = totalYield
-                allBestFields = fieldsNew.copy(deep=True)
-            #testfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
+    if args.fix_cadence_texp:
+        cadence = Cadence0
+        texp = texp0
+        totalYield, totalAreaPix, totalArea = handler.computeYield()
+        bestCadence = cadence
+        bestNread = np.floor(texp0/args.read_time)
+        bestYield = totalYield
+        print(bestNread*args.read_time,bestCadence)
+
+        if totalYield > allBestYield:
+            allBestYield = totalYield
+            allBestFields = fieldsNew.copy(deep=True)
+            allBestCadence = cadence
+            allBestNread = bestNread
+        
+    else:
+        for nread in range(args.nread_bounds[0],args.nread_bounds[1]+1):
+            cadence = (nread*args.read_time*Nfields+pathOverhead)/60.0
+            #print(cadence)
+            if args.cadence_bounds[0]<=cadence<args.cadence_bounds[1]:
+                #Modify yieldMap for nread,cadence
+                handler.scaleMap(cadence,Cadence0,alphaC,
+                                 nread*args.read_time,texp0,alphaT)
+                #Compute the yield
+                totalYield, totalAreaPix, totalArea = handler.computeYield()
+                if totalYield > bestYield:
+                    bestCadence = cadence
+                    bestNread = nread
+                    bestYield = totalYield
+
+                if totalYield > allBestYield:
+                    allBestYield = totalYield
+                    allBestFields = fieldsNew.copy(deep=True)
+                    allBestCadence = cadence
+                    allBestNread = nread
+                #testfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
 
     cadencegrid[index] = bestCadence
     nreadgrid[index] = bestNread
@@ -270,12 +307,14 @@ for index,l in np.ndenumerate(lgrid):
 
 handler.fromCentersChips(allBestFields,romanFoV,ym,debug=args.debug)
 print("Best yield: ",allBestYield)
+print("Best cadence: ",bestCadence)
+print("Best Nread (texp): %d (%g s)" % (bestNread,bestNread*args.read_time))
 print("Best fields:")
 print(allBestFields)
     
 testfile.close()
 with open(args.output_root + "_results.pkl",'wb') as pklhandle:
-    pickle.dump([lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler],pklhandle)
+    pickle.dump([lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler,lcenter,bcenter],pklhandle)
 
 
         

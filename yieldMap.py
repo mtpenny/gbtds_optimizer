@@ -6,8 +6,8 @@ import copy
 
 class yieldMap:
 
-    def __init__(self,filename,read_csv_kwargs={"sep":"\s+"},
-                 spike=[]):
+    def __init__(self,filename,read_csv_kwargs={},
+                 spike=[],units='per_tile'):
 
         '''
         Constructor that takes a filename and pandas read_csv 
@@ -22,32 +22,81 @@ class yieldMap:
         '''
 
         self.filename = filename
+        acceptable=False
+
+        #Try to autodetect the separator if no sep keyword arg passed
+        if not 'sep' in read_csv_kwargs:
+            read_csv_kwargs['sep']=None
+            read_csv_kwargs['engine']='python'
 
         #Read the map and account for different formats
         try:
             self.lbmap_orig = pd.read_csv(self.filename,
-                                          usecols=['l','b','yield'],
+                                          usecols=['l','b','yield','alphaTexp',
+                                                   'alphaCadence'],
                                           on_bad_lines='error',
                                           dtype=float,**read_csv_kwargs)
-                
+
+            if {'l','b','yield','alphaTexp','alphaCadence'}.issubset(self.lbmap_orig.columns):
+                acceptable=True
         except:
+            pass
+
+
+        if not acceptable:
+            try:
+                self.lbmap_orig = pd.read_csv(self.filename,
+                                              usecols=['l','b','yield'],
+                                              on_bad_lines='error',
+                                              dtype=float,**read_csv_kwargs)
+
+                if {'l','b','yield'}.issubset(self.lbmap_orig.columns):
+                    acceptable=True                    
+            except:
+                pass
+
+        if not acceptable:
             try:
                 self.lbmap_orig = pd.read_csv(self.filename,header=None,
                                               names=['l','b','yield','alphaTexp',
                                                      'alphaCadence'],
+                                              dtype=float,
                                               on_bad_lines='error',
-                                              dtype=float,**read_csv_kwargs)
+                                              **read_csv_kwargs)
+
+                if {'l','b','yield','alphaTexp','alphaCadence'}.issubset(self.lbmap_orig.columns):
+                    acceptable=True
             except:
-                try:
-                    self.lbmap_orig = pd.read_csv(self.filename,header=None,
-                                                  names=['l','b','yield'],
-                                                  dtype=float,
-                                                  on_bad_lines='error',
-                                                  **read_csv_kwargs)
-                except:
-                    raise RuntimeError('Error reading yieldMap file (%s)' % (self.filename))
+                pass
+
+
+        if not acceptable:
+            try:
+                self.lbmap_orig = pd.read_csv(self.filename,header=None,
+                                              names=['l','b','yield'],
+                                              dtype=float,
+                                              on_bad_lines='error',
+                                              **read_csv_kwargs)
+                
+                if {'l','b','yield'}.issubset(self.lbmap_orig.columns):
+                    acceptable=True                    
+            except:
+                raise RuntimeError('Error reading yieldMap file (%s). Try checking its formatting. It must have l,b, and yield columns, and can optionally have alphaTexp and alphaCadence columns too.' % (self.filename))
+
         print(self.lbmap_orig)
         print(self.lbmap_orig.shape)
+
+        if units=='per_deg2' or units=='per-deg2' or units=='per_deg' or units=='per-deg':
+            self.lpix = np.unique(self.lbmap_orig['l']) #Unique returns sorted list
+            self.bpix = np.unique(self.lbmap_orig['b'])
+            self.lspacing = np.average(self.lpix[1:]-self.lpix[:-1])
+            self.bspacing = np.average(self.bpix[1:]-self.bpix[:-1])
+            print("Assuming yield units are per deg2. Tile area is %g deg^2" % (self.lspacing*self.bspacing))
+            self.lbmap_orig['yield'] *= self.bspacing * self.lspacing
+        else:
+            print("Assuming yield units are per tile")
+
+        
 
         #Make a copy that will actually be used and modified
         self.lbmap_working = copy.deepcopy(self.lbmap_orig)

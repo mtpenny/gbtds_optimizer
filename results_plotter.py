@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 #Open the pickle
 with open(args.input_root + "_results.pkl",'rb') as pklhandle:
-    lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler = pickle.load(pklhandle)
+    lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler,lcenter,bcenter = pickle.load(pklhandle)
 
 
 #Zoom if needed
@@ -71,15 +71,15 @@ if args.smoothing > 0:
     ngrid_z = gaussian_filter(ngrid_z,args.smoothing)
 
 fig, ax = plt.subplots()
-ymap = handler.yieldMap.plotMap(ax=ax,pcolormesh_kwargs={'cmap':cm.gray})
+ymap = handler.yieldMap.plotMap(ax=ax,pcolormesh_kwargs={'cmap':cm.gray_r})
 
 if not args.plot_cadence and not args.plot_texp:
-    contour_set = ax.contour(lgrid_z,bgrid_z,ygrid_z)
+    contour_set = ax.contour(lgrid_z,bgrid_z,ygrid_z,linewidths=2)
 elif args.plot_cadence:
-    contour_set = ax.contour(lgrid_z,bgrid_z,cgrid_z)
+    contour_set = ax.contour(lgrid_z,bgrid_z,cgrid_z,linewidths=2)
 elif args.plot_texp:
     print(ngrid_z)
-    contour_set = ax.contour(lgrid_z,bgrid_z,ngrid_z)
+    contour_set = ax.contour(lgrid_z,bgrid_z,ngrid_z,linewidths=2)
     
 if not args.plot_fields_off:
     handler.plotFields(ax=ax,plot_kwargs={'color':'r','linestyle':'-','lw':0.5})

@@ -33,6 +33,21 @@ The basic inputs to this program are:
  - (default provided) slew and settle times as a function of slew angle.
  - (default provided) the detector layout.
  
+ Full options can be found by running the code with the help flag
+ i.e., `python gbtds_optimizer.py -h`
+ 
+ An example of how to run the code for a chosen layout is
+ ```
+ python gbtds_optimizer.py fidu_mass6_rate.yield.csv 42.56 14.7315 \
+        field_layouts/layout_7f_3_gal-center.centers \
+        --alpha-cadence -0.406 --alphaTexp 0.616 \
+		--lrange 2.2 -2.2 --brange -2.2 2.2 \
+		--lstep 0.2 --bstep 0.2 \
+		--cadence-bounds 7.0 15.0 \
+		--nread-bounds 10 40 \
+		--output-root fidu_mass6.layout_7f_3
+ ```
+ 
  
 ## results_plotter.py
 
