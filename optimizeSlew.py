@@ -217,7 +217,9 @@ for i,t in enumerate(texp2):
 print("Best combined slew time:",minslew)
 print("Best average slew time per field:",minslew/nfields)
 print("Best path:",bestpath)
-print("Best slews:",np.roll(slewTimes[path,np.roll(path,1)],-1))
+print("Best l:",l[bestpath].tolist())
+print("Best b:",b[bestpath].tolist())
+print("Best slews:",np.roll(slewTimes[bestpath,np.roll(bestpath,1)],-1))
 
 #For plotting, need to add the first field to the
 cycle = np.append(bestpath,bestpath[0])
