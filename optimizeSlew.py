@@ -31,7 +31,7 @@ from fields import fov
 
 #Options
 plotSlew = False
-debug = True
+debug = False
     
 #Load the fields file
 fieldsFile = sys.argv[1]
@@ -217,6 +217,7 @@ for i,t in enumerate(texp2):
 print("Best combined slew time:",minslew)
 print("Best average slew time per field:",minslew/nfields)
 print("Best path:",bestpath)
+print("Best slews:",np.roll(slewTimes[path,np.roll(path,1)],-1))
 
 #For plotting, need to add the first field to the
 cycle = np.append(bestpath,bestpath[0])
@@ -256,6 +257,7 @@ fig.text(0.5,0.9,fieldsFile + " - " + shortSlewFile,fontsize=14,ha='center')
 fig.text(0.85,0.85,"Total slew time: %.1f s" % minslew,fontsize=12,ha='right')
 fig.text(0.85,0.8,"Average slew time per field: %.1f s" % (minslew/nfields),fontsize=12,ha='right')
 fig.text(0.85,0.75,"Best path: %s" % (fieldNames[bestpath].astype(str).str.cat(sep=' ')),fontsize=12,ha='right')
+
 fig.tight_layout()
 
 plt.savefig(fieldsFile + ".pdf")
