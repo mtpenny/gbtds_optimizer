@@ -14,7 +14,7 @@ from yieldMap import yieldMap
 
 parser = argparse.ArgumentParser(description="Optimizer for the Roman Galactic Bulge Time Domain Survey")
 
-parser.add_argument('--input-root',default='test',
+parser.add_argument('-i','--input-root',default='test',
                     help='Filename root for output')
 parser.add_argument('--contour-resolution',default=1,type=float,
                     help='Zoom factor for increasing contour resolution')
@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 #Open the pickle
 with open(args.input_root + "_results.pkl",'rb') as pklhandle:
-    lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler,lcenter,bcenter = pickle.load(pklhandle)
+    lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler,lcenter,bcenter,read_time = pickle.load(pklhandle)
 
 
 #Zoom if needed
@@ -95,7 +95,14 @@ ax.clabel(contour_set)
 
 plt.colorbar(ymap,ax=ax,label='Yield per map tile')
 
+bestidx = np.argmax(yieldgrid)
+print(bestidx)
+print(yieldgrid.shape)
+print(cadencegrid.shape)
+ax.set_title('Best yield=%.2f cadence=%.2f min texp=%.2f s' % (yieldgrid.flatten()[bestidx],cadencegrid.flatten()[bestidx],read_time*nreadgrid.flatten()[bestidx]))
+
 if not args.save==False:
+    plt.tight_layout()
     save_root = args.save_root
     if save_root=='':
         save_root=args.input_root

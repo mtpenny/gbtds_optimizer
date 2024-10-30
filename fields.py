@@ -90,7 +90,7 @@ class fovHandler:
     #    Build a set of vertices from the
 
     def fromCentersChips(self,centers,chips,yieldMap,
-                         centers_kwargs={'sep':'\s+'},
+                         centers_kwargs={'sep':r'\s+'},
                          debug=False):
         '''
         Build vertices from a centers object (representing field
@@ -232,15 +232,15 @@ class slewOptimizer:
         if longSFile is not None:
             self.longSlewFile = longSFile
 
-        self.shortSlew = pd.read_csv(self.shortSlewFile,sep='\s+',header=None,
+        self.shortSlew = pd.read_csv(self.shortSlewFile,sep=r'\s+',header=None,
                                      comment='#')
         self.shortSlewFn = interp1d(self.shortSlew.iloc[:,0],self.shortSlew.iloc[:,1],
                                     fill_value="extrapolate")
-        self.diagSlew = pd.read_csv(self.diagSlewFile,sep='\s+',header=None,
+        self.diagSlew = pd.read_csv(self.diagSlewFile,sep=r'\s+',header=None,
                                     comment='#')
         self.diagSlewFn = interp1d(self.diagSlew.iloc[:,0],self.diagSlew.iloc[:,1],
                                    fill_value="extrapolate")
-        self.longSlew = pd.read_csv(self.longSlewFile,sep='\s+',header=None,
+        self.longSlew = pd.read_csv(self.longSlewFile,sep=r'\s+',header=None,
                                     comment='#')
         self.longSlewFn = interp1d(self.longSlew.iloc[:,0],self.longSlew.iloc[:,1],
                               fill_value="extrapolate")

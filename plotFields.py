@@ -24,11 +24,11 @@ ym = yieldMap(args.yieldmap_filename)
 romanFoV = fov(args.sca_filename,unit='deg')
 
 try:
-    fields = pd.read_csv(args.fields_filename,sep='\s+',header=None,names=['field','l','b','fixed'],
+    fields = pd.read_csv(args.fields_filename,sep=r'\s+',header=None,names=['field','l','b','fixed'],
                          dtype={'field':str,'l':float,'b':float,'fixed':int})
 except:
     try:
-        fields = pd.read_csv(args.fields_filename,sep='\s+')
+        fields = pd.read_csv(args.fields_filename,sep=r'\s+')
     except:
         raise RuntimeError('Error reading fields file (%s) - file does not exist or is in an incorrect format. It should containt the named columns ["field","l","b","fixed"] or 4 unnamed columns' % (args.fields_filename))
 
@@ -39,4 +39,5 @@ handler.fromCentersChips(fields,romanFoV,ym)
 plt.figure()
 #Can pass this an ax if desired in a subplot
 handler.plotFields(plot_kwargs={'color':'r','linestyle':'-','lw':0.5})
+plt.gca().set_aspect('equal')
 plt.show()

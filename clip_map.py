@@ -8,7 +8,7 @@ Convert a map into polygons
 """
 
 filename = 'H22.6_eventrates.rates'
-lbmap = pd.read_csv(filename,header=None,sep='\s+',names=['l','b','yield'])
+lbmap = pd.read_csv(filename,header=None,sep=r'\s+',names=['l','b','yield'])
 
 #Figure out the grid -
 

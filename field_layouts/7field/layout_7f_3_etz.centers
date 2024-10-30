@@ -1,4 +1,4 @@
-field l	   b	    fixed
+field	l	b	fixed
 1	0.5972 -1.64	0
 2	0.1891 -1.64	0
 3	1.0053 -1.64	0
@@ -6,4 +6,4 @@ field l	   b	    fixed
 5	1.4134 -0.85	0
 6	-0.219 -1.64	0
 7	1.4134 -1.64	0
-GC	0.0	   0.0		fixed
+ETZ	6.4	   0		fixed

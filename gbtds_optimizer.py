@@ -1,12 +1,5 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import argparse
 import sys
-import pickle
-
-from fields import fov,fovHandler,slewOptimizer
-from yieldMap import yieldMap
 
 #Create a map
 #lspike=45
@@ -28,13 +21,13 @@ from yieldMap import yieldMap
 parser = argparse.ArgumentParser(prog='gbtds_optimizer',
                                  description="Optimizer for the Roman Galactic Bulge Time Domain Survey")
 
-parser.add_argument('yieldmap_filename',
+parser.add_argument('-m','--map-filename',required=True,
                     help='File name for the yield map')
-parser.add_argument('map_cadence',type=float,
+parser.add_argument('--map-cadence',type=float,required=True,
                     help='Cadence the map was computed for, in minutes')
-parser.add_argument('map_texp',type=float,
+parser.add_argument('--map-texp',type=float,required=True,
                     help='Exposure time the map was computed for, in seconds')
-parser.add_argument('fields_filename',
+parser.add_argument('-f','--fields-filename',required=True,
                     help='File containing the field specifications (columns: name l b fixed)')
 parser.add_argument('--cadence-bounds',nargs=2,default=[5.0,16.0],type=float,
                     help='Bounds on the cadence to be considered default')
@@ -76,7 +69,7 @@ parser.add_argument('--test-yield',default=False,
 parser.add_argument('--test-plot',default=False,
                     help='Plot the layout of the input fields on the map a test')
 
-parser.add_argument('--output-root',default='test',
+parser.add_argument('--output-root','-o',default='test',
                     help='Filename root for output')
 parser.add_argument('--fix-path',action='store_true',
                     help='Do not optimize path through fields. This can potentially speed up calculations if the optimum path is obvious and fields are in the correct order in the fields file.')
@@ -91,12 +84,22 @@ parser.add_argument('--fix-cadence-texp',action='store_true',
 
 args = parser.parse_args()
 
+#Import the rest here
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import pickle
+
+from fields import fov,fovHandler,slewOptimizer
+from yieldMap import yieldMap
+
+
 lstep = args.lstep; bstep = args.bstep;
 lrange = args.lrange; brange = args.brange
 
 #Load the yieldMap and its derivatives
 
-ym = yieldMap(args.yieldmap_filename,units=args.yield_unit)
+ym = yieldMap(args.map_filename,units=args.yield_unit)
 
 #Load the power laws if needed
 #Process some arguments
@@ -107,8 +110,8 @@ if args.alpha_cadence is not None:
         try:
             alphaCadence = args.alpha_cadence
             if args.alpha_cadence == 'same':
-                alphaCadence=args.yieldmap_filename
-            alphaC = pd.read_csv(alphaCadence,sep='\s+',usecols=['l','b','alphaCadence'])['alphaCadence']
+                alphaCadence=args.map_filename
+            alphaC = pd.read_csv(alphaCadence,sep=r'\s+',usecols=['l','b','alphaCadence'])['alphaCadence']
         except:
             raise RuntimeError('Error reading alphaCadence file (%s)' % (alphaCadence))
 
@@ -119,8 +122,8 @@ if args.alpha_texp is not None:
         try:
             alphaTexp = args.alpha_texp
             if args.alpha_texp == 'same':
-                alphaTexp=args.yieldmap_filename
-            alphaT = pd.read_csv(alphaTexp,sep='\s+',usecols=['l','b','alphaTexp'])['alphaTexp']
+                alphaTexp=args.map_filename
+            alphaT = pd.read_csv(alphaTexp,sep=r'\s+',usecols=['l','b','alphaTexp'])['alphaTexp']
         except:
             raise RuntimeError('Error reading alphaTexp file (%s)' % (alphaTexp))
 
@@ -130,11 +133,11 @@ if args.alpha_texp is not None:
 romanFoV = fov(args.sca_filename,unit='deg')
 
 try:
-    fields = pd.read_csv(args.fields_filename,sep='\s+',header=None,names=['field','l','b','fixed'],
+    fields = pd.read_csv(args.fields_filename,sep=r'\s+',header=None,names=['field','l','b','fixed'],
                          dtype={'field':str,'l':float,'b':float,'fixed':int})
 except:
     try:
-        fields = pd.read_csv(args.fields_filename,sep='\s+')
+        fields = pd.read_csv(args.fields_filename,sep=r'\s+')
     except:
         raise RuntimeError('Error reading fields file (%s) - file does not exist or is in an incorrect format. It should containt the named columns ["field","l","b","fixed"] or 4 unnamed columns' % (args.fields_filename))
 
@@ -234,11 +237,11 @@ else:
 Nfields = fields.shape[0]
 
 allBestFields = 0
-allBestYield = -1e50
-allBestCadence = 0
+allBestYield = -0.001
+allBestCadence = args.cadence_bounds[1]
 allBestNread = 0
 
-testfile = open(args.output_root + '_results.txt','w',buffering=1)
+txtfile = open(args.output_root + '_results.txt','w',buffering=1)
 
 
 for index,l in np.ndenumerate(lgrid):
@@ -257,9 +260,9 @@ for index,l in np.ndenumerate(lgrid):
         #Recompute the path overhead if the distance between fields has
         #changed
         pathOverhead,bestPath = slewopt.optimizePath(fieldsNew,fixPath=args.fix_path)
-    bestYield=-1e50
-    bestCadence = np.nan
-    bestNread = np.nan
+    bestYield=-0.001
+    bestCadence = args.cadence_bounds[1]
+    bestNread = 1
 
     if args.fix_cadence_texp:
         cadence = Cadence0
@@ -279,7 +282,7 @@ for index,l in np.ndenumerate(lgrid):
     else:
         for nread in range(args.nread_bounds[0],args.nread_bounds[1]+1):
             cadence = (nread*args.read_time*Nfields+pathOverhead)/60.0
-            #print(cadence)
+            #print(nread,cadence)
             if args.cadence_bounds[0]<=cadence<args.cadence_bounds[1]:
                 #Modify yieldMap for nread,cadence
                 handler.scaleMap(cadence,Cadence0,alphaC,
@@ -296,28 +299,23 @@ for index,l in np.ndenumerate(lgrid):
                     allBestFields = fieldsNew.copy(deep=True)
                     allBestCadence = cadence
                     allBestNread = nread
-                #testfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
+                #txtfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
 
     cadencegrid[index] = bestCadence
     nreadgrid[index] = bestNread
     yieldgrid[index] = bestYield
-    print(l,b,bestNread*args.read_time,bestCadence,bestYield)
-    testfile.write("%g %g %d %g %g\n" % (l,b,bestNread,bestCadence,bestYield))
+    print("%10.3f %10.3f %5.2f %7.4f %g" % (l,b,bestNread*args.read_time,bestCadence,
+                              bestYield))
+    txtfile.write("%g %g %d %g %g\n" % (l,b,bestNread,bestCadence,bestYield))
 
 
 handler.fromCentersChips(allBestFields,romanFoV,ym,debug=args.debug)
 print("Best yield: ",allBestYield)
-print("Best cadence: ",bestCadence)
-print("Best Nread (texp): %d (%g s)" % (bestNread,bestNread*args.read_time))
+print("Best cadence: ",allBestCadence)
+print("Best Nread (texp): %d (%g s)" % (allBestNread,allBestNread*args.read_time))
 print("Best fields:")
 print(allBestFields)
     
-testfile.close()
+txtfile.close()
 with open(args.output_root + "_results.pkl",'wb') as pklhandle:
-    pickle.dump([lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler,lcenter,bcenter],pklhandle)
-
-
-        
-    
-
-
+    pickle.dump([lgrid,bgrid,nreadgrid,cadencegrid,yieldgrid,handler,lcenter,bcenter,args.read_time],pklhandle)

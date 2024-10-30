@@ -31,11 +31,11 @@ from fields import fov
 
 #Options
 plotSlew = False
-debug = False
+debug = True
     
 #Load the fields file
 fieldsFile = sys.argv[1]
-fields = pd.read_csv(fieldsFile,sep='\s+',comment='#',header=None)
+fields = pd.read_csv(fieldsFile,sep=r'\s+',comment='#')
 fieldNames = fields.iloc[:,0]
 l = fields.iloc[:,1]
 b = fields.iloc[:,2]
@@ -58,13 +58,13 @@ if len(sys.argv)==5:
     diagSlewFile = sys.argv[3]
     longSlewFile = sys.argv[4]
 
-shortSlew = pd.read_csv(shortSlewFile,sep='\s+',header=None,comment='#')
+shortSlew = pd.read_csv(shortSlewFile,sep=r'\s+',header=None,comment='#')
 shortSlewFn = interp1d(shortSlew.iloc[:,0],shortSlew.iloc[:,1],
                  fill_value="extrapolate")
-diagSlew = pd.read_csv(diagSlewFile,sep='\s+',header=None,comment='#')
+diagSlew = pd.read_csv(diagSlewFile,sep=r'\s+',header=None,comment='#')
 diagSlewFn = interp1d(diagSlew.iloc[:,0],diagSlew.iloc[:,1],
                 fill_value="extrapolate")
-longSlew = pd.read_csv(longSlewFile,sep='\s+',header=None,comment='#')
+longSlew = pd.read_csv(longSlewFile,sep=r'\s+',header=None,comment='#')
 longSlewFn = interp1d(longSlew.iloc[:,0],longSlew.iloc[:,1],
                 fill_value="extrapolate")
 
@@ -188,7 +188,7 @@ relyield1avg = relyield1no * (nfields/7.0)
 #print(relyield1no)
 #print(relyield1avg)
 
-table1 = [["Choose cadence","",""],["Cadence(min)","Texp(s)", "Rel. $1 M_{\oplus}$ yield"]]
+table1 = [["Choose cadence","",""],["Cadence(min)","Texp(s)", r"Rel. $1 M_{\oplus}$ yield"]]
 for i,c in enumerate(cadence1):
     table1.append([sdp(c),sdp(texp1[i]),tdp(relyield1no[i]) + "-" + tdp(relyield1avg[i])])
 
@@ -205,12 +205,12 @@ relyield2avg = relyield2no * (nfields/7.0)
 #print(relyield1no)
 #print(relyield1avg)
 
-table1 = [["Choose cadence","",""],["Cadence(min)","Texp(s)", "Rel. $1 M_{\oplus}$ yield"]]
+table1 = [["Choose cadence","",""],["Cadence(min)","Texp(s)", r"Rel. $1 M_{\oplus}$ yield"]]
 for i,c in enumerate(cadence1):
     table1.append([sdp(c),sdp(texp1[i]),tdp(relyield1no[i]) + "-" + tdp(relyield1avg[i])])
 
 
-table2 = [["Choose Texp","",""],["Texp(s)","Cadence(min)", "Rel. $1 M_{\oplus}$ yield"]]
+table2 = [["Choose Texp","",""],["Texp(s)","Cadence(min)", r"Rel. $1 M_{\oplus}$ yield"]]
 for i,t in enumerate(texp2):
     table2.append([sdp(t),sdp(cadence2[i]),tdp(relyield2no[i]) + "-" + tdp(relyield2avg[i])])
 

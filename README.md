@@ -38,7 +38,7 @@ The basic inputs to this program are:
  
  An example of how to run the code for a chosen layout is
  ```
- python gbtds_optimizer.py fidu_mass6_rate.yield.csv 42.56 14.7315 \
+ python gbtds_optimizer.py fidu_mass6_rate.yield.csv 14.7315 42.56 \
         field_layouts/layout_7f_3_gal-center.centers \
         --alpha-cadence -0.406 --alphaTexp 0.616 \
 		--lrange 2.2 -2.2 --brange -2.2 2.2 \
