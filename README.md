@@ -40,7 +40,7 @@ The basic inputs to this program are:
  ```
  python gbtds_optimizer.py fidu_mass6_rate.yield.csv 14.7315 42.56 \
         field_layouts/layout_7f_3_gal-center.centers \
-        --alpha-cadence -0.406 --alphaTexp 0.616 \
+        --alpha-cadence -0.406 --alpha-texp 0.616 \
 		--lrange 2.2 -2.2 --brange -2.2 2.2 \
 		--lstep 0.2 --bstep 0.2 \
 		--cadence-bounds 7.0 15.0 \
