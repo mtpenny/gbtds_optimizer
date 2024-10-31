@@ -217,9 +217,12 @@ for i,t in enumerate(texp2):
 print("Best combined slew time:",minslew)
 print("Best average slew time per field:",minslew/nfields)
 print("Best path:",bestpath)
-print("Best l:",l[bestpath].tolist())
-print("Best b:",b[bestpath].tolist())
-print("Best slews:",np.roll(slewTimes[bestpath,np.roll(bestpath,1)],-1))
+print("Best l (deg):",l[bestpath].tolist())
+print("Best b (deg):",b[bestpath].tolist())
+c1 = SkyCoord(l[bestpath],b[bestpath],unit=u.deg,frame='galactic')
+c2 = SkyCoord(np.roll(l[bestpath],-1),np.roll(b[bestpath],-1),unit=u.deg,frame='galactic')
+print("Best slew distance (deg):",c2.separation(c1).degree)
+print("Best slew times (s):",np.roll(slewTimes[bestpath,np.roll(bestpath,1)],-1))
 
 #For plotting, need to add the first field to the
 cycle = np.append(bestpath,bestpath[0])
