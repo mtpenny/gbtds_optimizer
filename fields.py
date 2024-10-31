@@ -93,6 +93,7 @@ class fovHandler:
                          centers_kwargs={'sep':r'\s+'},
                          debug=False):
         '''
+        Constructor
         Build vertices from a centers object (representing field
         centers) and a chips object (representing the corners of
         the chips/SCAs in a field of view). Centers should be a
@@ -105,6 +106,8 @@ class fovHandler:
         self.lpix = []
         self.bpix = []
         self.yieldMap = yieldMap
+        self.area = None
+        self.covfac = None
         self.debug = debug
 
         if isinstance(centers,str):
@@ -136,6 +139,10 @@ class fovHandler:
 
     def plotFields(self,ax=None,
                    plot_kwargs={'color':'k','linestyle':'-'}):
+        """
+        Plot the field layout stored in the class
+        """
+        
         for i,l in enumerate(self.lpix):
             if ax is None:
                 #print(self.chip[i],self.lpix[i],self.bpix[i])
@@ -149,6 +156,9 @@ class fovHandler:
 
 
     def scaleMap(self,Cadence,C0,alphaC,Texp,Texp0,alphaTexp):
+        """
+        Scale the yield map by the relative cadence and texp using power laws
+        """
         if (np.isscalar(alphaC) and alphaC==0) and (np.isscalar(alphaTexp) and alphaTexp ==0):
             pass
         else:
@@ -156,7 +166,7 @@ class fovHandler:
                 (Cadence/C0)**alphaC * (Texp/Texp0)**alphaTexp
             self.yieldMap.processMap()
 
-    def computeYield(self):
+    def computeYield(self, add_covfac=False):
 
         '''
         Compute the yield of the fovHandler's current layout and map.
@@ -177,7 +187,7 @@ class fovHandler:
 
         ym = self.yieldMap
 
-        lidx, bidx, area, slices = clip_multi(self.lpix, self.bpix, ym.map_naxis)
+        lidx, bidx, self.area, slices = clip_multi(self.lpix, self.bpix, ym.map_naxis)
 
 
         # slices is a list of slice objects to link between the input
@@ -198,6 +208,9 @@ class fovHandler:
             print(lidx)
             print(bidx)
 
+        if add_covfac:
+            ym['covfac'] = 0
+
         for i, s in enumerate(slices):
             if debug:
                 print(s)
@@ -205,12 +218,15 @@ class fovHandler:
                 print(type(bidx[s]))
                 print(lidx[s],ym.lmap[bidx[s],lidx[s]])
                 print(bidx[s],ym.bmap[bidx[s],lidx[s]])
-                print(area[s],ym.yieldmap[bidx[s],lidx[s]])
-                print(f'total area for polygon {i}={np.sum(area[s])}')
-                print(f'total yield for polygon {i}={np.sum(area[s]*ym.yieldmap[bidx[s],lidx[s]])}')
-            totalArea += np.sum(area[s])
+                print(self.area[s],ym.yieldmap[bidx[s],lidx[s]])
+                print(f'total area for polygon {i}={np.sum(self.area[s])}')
+                print(f'total yield for polygon {i}={np.sum(self.area[s]*ym.yieldmap[bidx[s],lidx[s]])}')
+            if add_covfac:
+                ym.covfac[bidx[s],lidx[s]] += self.area[s]
+                
+            totalArea += np.sum(self.area[s])
             totalYield += np.sum(
-                area[s]*ym.yieldmap[bidx[s],lidx[s]])
+                self.area[s]*ym.yieldmap[bidx[s],lidx[s]])
         if self.debug:
             print(totalArea,totalArea*ym.lspacing*ym.bspacing,totalYield)
 

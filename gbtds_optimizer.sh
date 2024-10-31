@@ -39,14 +39,15 @@ echo brange
 echo $brange
 
 
-
+nftmp=${layout#layout_}
+nfields=${nftmp%%f*}
 
 python gbtds_optimizer.py $map_commands \
-       --fields-filename field_layouts/${layout}.centers \
+       --fields-filename field_layouts/${nfields}field/${layout}.centers \
        --lrange $lrange --brange $brange \
        --lstep $step --bstep $step \
        --cadence-bounds 7.0 15.0 --nread-bounds 10 40 \
-       --output-root ${maproot}.${layout}
+       --output-root ${maproot}.${layout} --debug
 
 python results_plotter.py -i $maproot.$layout --contour-resolution 5 \
        --smoothing 0.3 --lrange $maplmax $maplmin --brange $mapbmin $mapbmax \
