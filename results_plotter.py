@@ -95,11 +95,17 @@ ax.clabel(contour_set)
 
 plt.colorbar(ymap,ax=ax,label='Yield per map tile')
 
-bestidx = np.argmax(yieldgrid)
-print(bestidx)
+Nyield = yieldgrid[bgrid>0]
+Syield = yieldgrid[bgrid<=0]
+
+bestidxN = np.argmax(Nyield)
+bestidxS = np.argmax(Syield)
+print(bestidxN,bestidxS)
 print(yieldgrid.shape)
 print(cadencegrid.shape)
-ax.set_title('Best yield=%.2f cadence=%.2f min texp=%.2f s' % (yieldgrid.flatten()[bestidx],cadencegrid.flatten()[bestidx],read_time*nreadgrid.flatten()[bestidx]))
+ax.set_title('N Best yield=%.2f cadence=%.2f min texp=%.2f s\nS Best yield=%.2f cadence=%.2f min texp=%.2f s' % (
+    Nyield.flatten()[bestidxN],cadencegrid[bgrid>0].flatten()[bestidxN],read_time*nreadgrid[bgrid>0].flatten()[bestidxN],
+    Syield.flatten()[bestidxS],cadencegrid[bgrid<=0].flatten()[bestidxS],read_time*nreadgrid[bgrid<=0].flatten()[bestidxS]))
 
 if not args.save==False:
     plt.tight_layout()
