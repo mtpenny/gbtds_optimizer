@@ -52,7 +52,7 @@ for nf in nfields:
 
             fname = f'field_layouts/{nf}fields/layout_{nf}f_{nupper}{letters[let]}.centers'
             print(fname)
-            output.to_csv(fname,sep=' ')
+            output.to_csv(fname,sep=' ',index=False)
 
             #print(pd.({"field":"","l":1000.0,"b":1000.0,"fixed":1}))
 
@@ -63,7 +63,7 @@ for nf in nfields:
                 #print(f'field_layouts/{nf}fields/layout_{nf}f_{nupper}{letters[let]}_{efrow["name"]}.centers')
                 #print(output)
                 print(fname)
-                output.to_csv(fname,sep=' ')
+                output.to_csv(fname,sep=' ',index=False)
 
         if nupper==0:
             continue

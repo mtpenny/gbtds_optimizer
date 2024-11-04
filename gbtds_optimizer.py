@@ -234,6 +234,7 @@ if allfixed:
 else:
     lcenter = 0.5*(np.max(fields.loc[freeMask,'l'])+np.min(fields.loc[freeMask,'l']))
     bcenter = 0.5*(np.max(fields.loc[freeMask,'b'])+np.min(fields.loc[freeMask,'b']))
+print("Input fields center",lcenter,bcenter)
 Nfields = fields.shape[0]
 
 allBestFields = {"pos":0,"neg":0}
@@ -256,6 +257,9 @@ for index,l in np.ndenumerate(lgrid):
     #print(fieldsNew)
     fieldsNew.loc[freeMask,'l'] += (l-lcenter)
     fieldsNew.loc[freeMask,'b'] += (b-bcenter)
+    if index==0:
+        print(l,b,"fieldsNew")
+        print(fieldsNew)
     #print("after")
     #print(fieldsNew)
     #print("")

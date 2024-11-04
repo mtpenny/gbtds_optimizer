@@ -182,7 +182,7 @@ class fovHandler:
 
         # slices is a list of slice objects to link between the input
         # polygons and the clipped pixel grid.
-        # clipped_l,clipped_b are the grid indices with overlapping pixels.
+        # lidx,bidx are the map grid indices with overlapping pixels.
         # area is the overlapping area on a given pixel.
         # Each slice belongs to a polygon, and it has the number of elements
         # corresponding to the number of pixels it covers
@@ -199,18 +199,46 @@ class fovHandler:
             print(bidx)
 
         for i, s in enumerate(slices):
+            lidxlist = lidx[s]
+            bidxlist = bidx[s]
+            idxmask = (lidxlist>=0) & (lidxlist<len(ym.lpix)) & (bidxlist>=0) & (bidxlist<len(ym.bpix))
+            lidxm = lidxlist[idxmask]
+            bidxm = bidxlist[idxmask]
             if debug:
-                print(s)
-                print(lidx[s].tolist())
-                print(type(bidx[s]))
-                print(lidx[s],ym.lmap[bidx[s],lidx[s]])
-                print(bidx[s],ym.bmap[bidx[s],lidx[s]])
-                print(area[s],ym.yieldmap[bidx[s],lidx[s]])
+                print("len(ym.lpix)",len(ym.lpix))
+                print("len(ym.bpix)",len(ym.bpix))
+                print("lidxlist",lidxlist)
+                print("bidxlist",bidxlist)
+                print("idxmask",idxmask)
+                print("lidxlist",lidxlist)
+                print("bidxlist",bidxlist)
+                    
+
+            '''
+            if debug:
+                print("s",s)
+                print("lidx",lidx[s].tolist())
+                print("type(bidx)",type(bidx[s]))
+                print("lidx,lmap",lidx[s],ym.lmap[bidx[s],lidx[s]])
+                print("bidx,bmap",bidx[s],ym.bmap[bidx[s],lidx[s]])
+                print("areas,yieldmap",area[s],ym.yieldmap[bidx[s],lidx[s]])
                 print(f'total area for polygon {i}={np.sum(area[s])}')
                 print(f'total yield for polygon {i}={np.sum(area[s]*ym.yieldmap[bidx[s],lidx[s]])}')
             totalArea += np.sum(area[s])
-            totalYield += np.sum(
-                area[s]*ym.yieldmap[bidx[s],lidx[s]])
+            totalYield += np.sum(area[s]*ym.yieldmap[bidx[s],lidx[s]])
+            '''
+
+            if debug:
+                print("s",s)
+                print("lidx",lidxm.tolist())
+                print("type(bidx)",type(bidxm))
+                print("lidx,lmap",lidxm,ym.lmap[bidxm,lidxm])
+                print("bidx,bmap",bidxm,ym.bmap[bidxm,lidxm])
+                print("areas,yieldmap",(area[s])[idxmask],ym.yieldmap[bidxm,lidxm])
+                print(f'total area for polygon {i}={np.sum((area[s])[idxmask])}')
+                print(f'total yield for polygon {i}={np.sum((area[s])[idxmask]*ym.yieldmap[bidxm,lidxm])}')
+            totalArea += np.sum((area[s])[idxmask])
+            totalYield += np.sum((area[s])[idxmask]*ym.yieldmap[bidxm,lidxm])
         if self.debug:
             print(totalArea,totalArea*ym.lspacing*ym.bspacing,totalYield)
 
