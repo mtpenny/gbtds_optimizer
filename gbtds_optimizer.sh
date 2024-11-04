@@ -50,10 +50,10 @@ python gbtds_optimizer.py $map_commands \
        --fields-filename field_layouts/${nfields}fields/${layout}.centers \
        --lrange $lrange --brange $brange \
        --lstep $step --bstep $step \
-       --cadence-bounds 7.0 12.0 --nread-bounds 10 40 \
-       --output-root ${maproot}.${layout}
+       --cadence-bounds 7.0 15.0 --nread-bounds 10 40 \
+       --output-root output/${maproot}.${layout}
 
-python results_plotter.py -i $maproot.$layout --contour-resolution 5 \
+python results_plotter.py -i output/$maproot.$layout --contour-resolution 5 \
        --smoothing 0.3 --lrange $maplmax $maplmin --brange $mapbmin $mapbmax \
-       --save png --save-root $maproot.$layout --no-show
+       --save png --save-root output/$maproot.$layout --no-show
 

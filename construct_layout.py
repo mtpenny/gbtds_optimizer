@@ -65,8 +65,8 @@ for nf in nfields:
                 print(fname)
                 output.to_csv(fname,sep=' ',index=False)
 
-        if nupper==0:
-            continue
+            if nupper==0:
+                break
 
 
 

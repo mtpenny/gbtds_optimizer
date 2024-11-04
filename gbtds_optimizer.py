@@ -111,7 +111,7 @@ if args.alpha_cadence is not None:
             alphaCadence = args.alpha_cadence
             if args.alpha_cadence == 'same':
                 alphaCadence=args.map_filename
-            alphaC = pd.read_csv(alphaCadence,sep=r'\s+',usecols=['l','b','alphaCadence'])['alphaCadence']
+            alphaC = pd.read_csv(alphaCadence,usecols=['l','b','alphaCadence'])['alphaCadence']
         except:
             raise RuntimeError('Error reading alphaCadence file (%s)' % (alphaCadence))
 
@@ -123,7 +123,7 @@ if args.alpha_texp is not None:
             alphaTexp = args.alpha_texp
             if args.alpha_texp == 'same':
                 alphaTexp=args.map_filename
-            alphaT = pd.read_csv(alphaTexp,sep=r'\s+',usecols=['l','b','alphaTexp'])['alphaTexp']
+            alphaT = pd.read_csv(alphaTexp,usecols=['l','b','alphaTexp'])['alphaTexp']
         except:
             raise RuntimeError('Error reading alphaTexp file (%s)' % (alphaTexp))
 
@@ -243,6 +243,7 @@ allBestCadence = {"pos":args.cadence_bounds[1],"neg":args.cadence_bounds[1]}
 allBestNread = {"pos":0,"neg":0}
 
 txtfile = open(args.output_root + '_results.txt','w',buffering=1)
+txtfile2 = open(args.output_root + '_full.txt','w',buffering=-1)
 
 
 for index,l in np.ndenumerate(lgrid):
@@ -298,6 +299,7 @@ for index,l in np.ndenumerate(lgrid):
                                  nread*args.read_time,texp0,alphaT)
                 #Compute the yield
                 totalYield, totalAreaPix, totalArea = handler.computeYield()
+                txtfile2.write("%g %g %d %g %g\n" % (l,b,nread,cadence,totalYield))
                 if totalYield > bestYield:
                     bestCadence = cadence
                     bestNread = nread
@@ -309,6 +311,9 @@ for index,l in np.ndenumerate(lgrid):
                     allBestCadence[pn] = cadence
                     allBestNread[pn] = nread
                 #txtfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
+            else:
+                txtfile2.write("%g %g %d %g %g\n" % (l,b,nread,cadence,0.0))
+                
 
     cadencegrid[index] = bestCadence
     nreadgrid[index] = bestNread
