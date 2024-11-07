@@ -118,6 +118,7 @@ class fovHandler:
                 centers['fixed']=0
             else:
                 raise "centers is not a dataframe containing at least the columns 'l','b', and 'field'"
+        centers['field'] = centers['field'].astype(str)
 
         #print(centers)
 
@@ -272,6 +273,10 @@ class slewOptimizer:
                                     comment='#')
         self.longSlewFn = interp1d(self.longSlew.iloc[:,0],self.longSlew.iloc[:,1],
                               fill_value="extrapolate")
+
+        if self.debug:
+            print("Short, diag, long slew times (0.4 deg)")
+            print(self.shortSlewFn(0.4),self.diagSlewFn(0.4),self.longSlewFn(0.4))
 
     def faster_cyc_permutations(self, m):
         """

@@ -1,7 +1,7 @@
-Short FoV slews, no wheels failed, 50% torque margin on CBE MOI, 1.5x5.2s read cycle time added
-        
-Slew angle      Slew + settle time
-(degrees)     (seconds)
+#Short FoV slews, no wheels failed, 50% torque margin on CBE MOI, 1.5x5.2s read cycle time added
+#        
+#Slew angle      Slew + settle time
+#(degrees)     (seconds)
 0.00000000e+00 19.8
 1.00000000e-02 28.1085
 2.00000000e-02 31.5558

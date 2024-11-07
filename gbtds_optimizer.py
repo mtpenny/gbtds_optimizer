@@ -56,12 +56,12 @@ parser.add_argument('--bstep',default=0.01,type=float,
 parser.add_argument('--read-time',default=3.04,type=float,
                     help='Time between up-the-ramp reads of a pixel in seconds')
 
-parser.add_argument('--slew-rates-short-fov-filename',nargs=1,
+parser.add_argument('--slew-rates-short-fov-filename',
                     default='slew_times_withResetReference_McEnery05232024.txt',
                     help='Filename for the short FoV slew and settle times')
-parser.add_argument('--slew-rates-diagonal-fov-filename',nargs=1,default=None,
+parser.add_argument('--slew-rates-diagonal-fov-filename',default=None,
                     help='Filename for the diagonal FoV slew and settle times')
-parser.add_argument('--slew-rates-long-fov-filename',nargs=1,default=None,
+parser.add_argument('--slew-rates-long-fov-filename',default=None,
                     help='Filename for the long FoV slew and settle times')
 
 parser.add_argument('--test-yield',default=False,
@@ -163,6 +163,7 @@ handler = fovHandler()
 handler.fromCentersChips(fields,romanFoV,ym,debug=args.debug)
 
 #Create a slewOptimizer object and initialize it with the slew times
+print(f"{args.slew_rates_short_fov_filename},{args.slew_rates_diagonal_fov_filename},{args.slew_rates_long_fov_filename}")
 slewopt = slewOptimizer(args.slew_rates_short_fov_filename,args.slew_rates_diagonal_fov_filename,args.slew_rates_long_fov_filename,debug=args.debug)
 
 #Compute the yield for the input fields to test that everything is working.
