@@ -82,6 +82,9 @@ parser.add_argument('--yield-unit',default='per_tile',type=str,
 parser.add_argument('--fix-cadence-texp',action='store_true',
                     help='Do not adjust the cadence or exposure time from the input cadence')
 
+parser.add_argument('--output-covfac',action='store_true',
+                    help='Output a covfac file for the optimum. If an argument is given it will be the filename used.')
+
 args = parser.parse_args()
 
 #Import the rest here
@@ -168,7 +171,7 @@ slewopt = slewOptimizer(args.slew_rates_short_fov_filename,args.slew_rates_diago
 
 #Compute the yield for the input fields to test that everything is working.
 if args.test_yield or args.test_plot or allfixed:
-    totalYield, totalAreaPix, totalArea = handler.computeYield()
+    totalYield, totalAreaPix, totalArea = handler.computeYield(args.output_covfac)
     print("Testing the yield computation.")
     print("Total yield:",totalYield)
     print("Total area (map pixels):",totalAreaPix)
@@ -208,7 +211,9 @@ if allfixed:
     cadence = (nread*args.read_time*Nfields+pathOverhead)/60.0
     handler.scaleMap(cadence,Cadence0,alphaC,
                      nread*args.read_time,texp0,alphaT)
-    totalYield, totalAreaPix, totalArea = handler.computeYield()
+    totalYield, totalAreaPix, totalArea = handler.computeYield(args.output_covfac)
+    if args.output_covfac:
+        handler.yieldMap[["l","b","covfac"]].to_csv(args.output_root + ".covfac")
     print("Total yield:",totalYield)
     print("Total area (map pixels):",totalAreaPix)
     print("Total area (deg^2):",totalArea)
@@ -311,6 +316,7 @@ for index,l in np.ndenumerate(lgrid):
                     allBestFields[pn] = fieldsNew.copy(deep=True)
                     allBestCadence[pn] = cadence
                     allBestNread[pn] = nread
+                        
                 #txtfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
             else:
                 txtfile2.write("%g %g %d %g %g\n" % (l,b,nread,cadence,0.0))
@@ -332,6 +338,12 @@ for pn in ["pos","neg"]:
     print(f"{location[pn]} Best Nread (texp): %d (%g s)" % (allBestNread[pn],allBestNread[pn]*args.read_time))
     print(f"{location[pn]} Best fields:")
     print(allBestFields[pn])
+    if args.output_covfac:
+        handler.yieldMap.covfac = np.zeros(handler.yieldMap.yieldmap.shape)
+        totalYieldtmp, totalAreaPixtmp, totalAreatmp = handler.computeYield(args.output_covfac)
+        pd.DataFrame({'l':handler.yieldMap.llist,'b':handler.yieldMap.blist,'covfac':handler.yieldMap.covfac.flatten()}).to_csv(args.output_root + f"_{location[pn]}.covfac",index=False)
+        
+
     
 txtfile.close()
 with open(args.output_root + "_results.pkl",'wb') as pklhandle:

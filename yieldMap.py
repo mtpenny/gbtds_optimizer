@@ -180,12 +180,6 @@ class yieldMap:
     def y2b(self,y):
         return (np.array(y)-0.5)*self.bspacing+self.borigin
 
-    def covfac():
-        '''
-        Return a covfac file for the yield map and layout. This is the fraction
-        of each map pixel covered by an active chip
-        '''
-        return self.area/(ym.lspacing*ym.bspacing)
 
 
         

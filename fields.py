@@ -190,7 +190,6 @@ class fovHandler:
 
         lidx, bidx, self.area, slices = clip_multi(self.lpix, self.bpix, ym.map_naxis)
 
-
         # slices is a list of slice objects to link between the input
         # polygons and the clipped pixel grid.
         # lidx,bidx are the map grid indices with overlapping pixels.
@@ -210,7 +209,13 @@ class fovHandler:
             print(bidx)
 
         if add_covfac:
-            ym['covfac'] = 0
+            print("slices, lidx, bidx, self.area")
+            print(slices)
+            print(lidx)
+            print(bidx)
+            print(self.area)
+            print(ym.covfac)
+            print("")
 
         for i, s in enumerate(slices):
             lidxlist = lidx[s]
@@ -248,12 +253,19 @@ class fovHandler:
                 print("type(bidx)",type(bidxm))
                 print("lidx,lmap",lidxm,ym.lmap[bidxm,lidxm])
                 print("bidx,bmap",bidxm,ym.bmap[bidxm,lidxm])
-                print("areas,yieldmap",(area[s])[idxmask],ym.yieldmap[bidxm,lidxm])
-                print(f'total area for polygon {i}={np.sum((area[s])[idxmask])}')
-                print(f'total yield for polygon {i}={np.sum((area[s])[idxmask]*ym.yieldmap[bidxm,lidxm])}')
-            totalArea += np.sum((area[s])[idxmask])
-            totalYield += np.sum((area[s])[idxmask]*ym.yieldmap[bidxm,lidxm])
-
+                print("areas,yieldmap",(self.area[s])[idxmask],ym.yieldmap[bidxm,lidxm])
+                print(f'total area for polygon {i}={np.sum((self.area[s])[idxmask])}')
+                print(f'total yield for polygon {i}={np.sum((self.area[s])[idxmask]*ym.yieldmap[bidxm,lidxm])}')
+            totalArea += np.sum((self.area[s])[idxmask])
+            totalYield += np.sum((self.area[s])[idxmask]*ym.yieldmap[bidxm,lidxm])
+            if add_covfac:
+                ym.covfac[bidxm,lidxm] += (self.area[s])[idxmask]
+                
+        if add_covfac:
+            print(ym.covfac[ym.covfac>0])
+            print(np.sum(ym.covfac)*ym.lspacing*ym.bspacing)
+            print(totalArea,totalArea*ym.lspacing*ym.bspacing,totalYield)
+                
         if self.debug:
             print(totalArea,totalArea*ym.lspacing*ym.bspacing,totalYield)
 

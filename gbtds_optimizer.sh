@@ -24,7 +24,7 @@ read padlm padlp padbm padbp < <(awk 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bm
 
 read maplmin maplmax mapbmin mapbmax < <(awk -v FS=',' 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bmax=-1e50}NR>1{if($1<lmin) lmin=$1; if($1>lmax) lmax=$1; if($2<bmin) bmin=$2; if($2>bmax) bmax=$2;}END{print lmin,lmax,bmin,bmax}' $map_file)
 
-step=0.2
+step=1.0
 
 lrange=$(echo 1 | awk -v lmin=$lmin -v lmax=$lmax -v lcent=$lcent -v padlm=$padlm -v padlp=$padlp -v maplmin=$maplmin -v maplmax=$maplmax -v step=$step 'function floor(x){if(x<0){if(int(x)==x) return int(x); else return int(x)-1}else return int(x)}{maxf=maplmax-padlp-(lmax-lcent); minf=maplmin-padlm-(lmin-lcent); print step*floor(maxf/step),-step*floor(-minf/step)}')
 
@@ -51,7 +51,7 @@ python gbtds_optimizer.py $map_commands \
        --lrange $lrange --brange $brange \
        --lstep $step --bstep $step \
        --cadence-bounds 7.0 15.0 --nread-bounds 10 40 \
-       --output-root output/${maproot}.${layout}
+       --output-root output/${maproot}.${layout} --output-covfac
 
 python results_plotter.py -i output/$maproot.$layout --contour-resolution 5 \
        --smoothing 0.3 --lrange $maplmax $maplmin --brange $mapbmin $mapbmax \
