@@ -10,12 +10,15 @@ map_file=$(echo $map_commands | awk 'BEGIN{mapopt=-1}{for(i=1;i<=NF;i++){if($(i)
 maproot=${1%.*}
 layout=$2
 
+nftmp=${layout#layout_}
+nfields=${nftmp%%f*}
+
 echo map_file $map_file
 
 #--map-filename fidu_mass6_rate.yield.csv --map-cadence 14.7315 --map-texp 42.56 --fields-filename
 
 #Field dimensions
-read lmin lcent lmax bmin bcent bmax < <(awk 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bmax=-1e50}$4==0&&NR>1{if($2<lmin) lmin=$2; if($2>lmax) lmax=$2; if($3<bmin) bmin=$3; if($3>bmax) bmax=$3;}END{print lmin,0.5*(lmin+lmax),lmax,bmin,0.5*(bmin+bmax),bmax}' field_layouts/$layout.centers)
+read lmin lcent lmax bmin bcent bmax < <(awk 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bmax=-1e50}$4==0&&NR>1{if($2<lmin) lmin=$2; if($2>lmax) lmax=$2; if($3<bmin) bmin=$3; if($3>bmax) bmax=$3;}END{print lmin,0.5*(lmin+lmax),lmax,bmin,0.5*(bmin+bmax),bmax}' field_layouts/${nfields}fields/$layout.centers)
 
 read padlm padlp padbm padbp < <(awk 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bmax=-1e50}NF==3{if($2<lmin) lmin=$2; if($2>lmax) lmax=$2; if($3<bmin) bmin=$3; if($3>bmax) bmax=$3;}END{print lmin,lmax,bmin,bmax}' sca_layout.txt)
 
@@ -39,17 +42,18 @@ echo brange
 echo $brange
 
 
-nftmp=${layout#layout_}
-nfields=${nftmp%%f*}
+#lrange="5 -5"
+#brange="-3 3"
+
 
 python gbtds_optimizer.py $map_commands \
-       --fields-filename field_layouts/${nfields}field/${layout}.centers \
+       --fields-filename field_layouts/${nfields}fields/${layout}.centers \
        --lrange $lrange --brange $brange \
        --lstep $step --bstep $step \
        --cadence-bounds 7.0 15.0 --nread-bounds 10 40 \
-       --output-root ${maproot}.${layout} --debug
+       --output-root output/${maproot}.${layout}
 
-python results_plotter.py -i $maproot.$layout --contour-resolution 5 \
+python results_plotter.py -i output/$maproot.$layout --contour-resolution 5 \
        --smoothing 0.3 --lrange $maplmax $maplmin --brange $mapbmin $mapbmax \
-       --save png --save-root $maproot.$layout --no-show
+       --save png --save-root output/$maproot.$layout --no-show
 

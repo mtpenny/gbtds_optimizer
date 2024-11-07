@@ -48,6 +48,7 @@ The basic inputs to this program are:
 		--output-root fidu_mass6.layout_7f_3
  ```
  
+$$Y_{\rm new} = Y_{\rm orig} (t_{\rm exp,new}/t_{\rm exp,orig})^{\alpha_{t_{\rm exp}}} (\Gamma_{\rm new}/\Gamma_{\rm orig})^{\alpha_{\Gamma}}$$
  
 ## results_plotter.py
 

@@ -56,12 +56,12 @@ parser.add_argument('--bstep',default=0.01,type=float,
 parser.add_argument('--read-time',default=3.04,type=float,
                     help='Time between up-the-ramp reads of a pixel in seconds')
 
-parser.add_argument('--slew-rates-short-fov-filename',nargs=1,
+parser.add_argument('--slew-rates-short-fov-filename',
                     default='slew_times_withResetReference_McEnery05232024.txt',
                     help='Filename for the short FoV slew and settle times')
-parser.add_argument('--slew-rates-diagonal-fov-filename',nargs=1,default=None,
+parser.add_argument('--slew-rates-diagonal-fov-filename',default=None,
                     help='Filename for the diagonal FoV slew and settle times')
-parser.add_argument('--slew-rates-long-fov-filename',nargs=1,default=None,
+parser.add_argument('--slew-rates-long-fov-filename',default=None,
                     help='Filename for the long FoV slew and settle times')
 
 parser.add_argument('--test-yield',default=False,
@@ -111,7 +111,7 @@ if args.alpha_cadence is not None:
             alphaCadence = args.alpha_cadence
             if args.alpha_cadence == 'same':
                 alphaCadence=args.map_filename
-            alphaC = pd.read_csv(alphaCadence,sep=r'\s+',usecols=['l','b','alphaCadence'])['alphaCadence']
+            alphaC = pd.read_csv(alphaCadence,usecols=['l','b','alphaCadence'])['alphaCadence']
         except:
             raise RuntimeError('Error reading alphaCadence file (%s)' % (alphaCadence))
 
@@ -123,7 +123,7 @@ if args.alpha_texp is not None:
             alphaTexp = args.alpha_texp
             if args.alpha_texp == 'same':
                 alphaTexp=args.map_filename
-            alphaT = pd.read_csv(alphaTexp,sep=r'\s+',usecols=['l','b','alphaTexp'])['alphaTexp']
+            alphaT = pd.read_csv(alphaTexp,usecols=['l','b','alphaTexp'])['alphaTexp']
         except:
             raise RuntimeError('Error reading alphaTexp file (%s)' % (alphaTexp))
 
@@ -163,6 +163,7 @@ handler = fovHandler()
 handler.fromCentersChips(fields,romanFoV,ym,debug=args.debug)
 
 #Create a slewOptimizer object and initialize it with the slew times
+print(f"{args.slew_rates_short_fov_filename},{args.slew_rates_diagonal_fov_filename},{args.slew_rates_long_fov_filename}")
 slewopt = slewOptimizer(args.slew_rates_short_fov_filename,args.slew_rates_diagonal_fov_filename,args.slew_rates_long_fov_filename,debug=args.debug)
 
 #Compute the yield for the input fields to test that everything is working.
@@ -234,24 +235,33 @@ if allfixed:
 else:
     lcenter = 0.5*(np.max(fields.loc[freeMask,'l'])+np.min(fields.loc[freeMask,'l']))
     bcenter = 0.5*(np.max(fields.loc[freeMask,'b'])+np.min(fields.loc[freeMask,'b']))
+print("Input fields center",lcenter,bcenter)
 Nfields = fields.shape[0]
 
-allBestFields = 0
-allBestYield = -0.001
-allBestCadence = args.cadence_bounds[1]
-allBestNread = 0
+allBestFields = {"pos":0,"neg":0}
+allBestYield = {"pos":-0.001,"neg":-0.001}
+allBestCadence = {"pos":args.cadence_bounds[1],"neg":args.cadence_bounds[1]}
+allBestNread = {"pos":0,"neg":0}
 
 txtfile = open(args.output_root + '_results.txt','w',buffering=1)
+txtfile2 = open(args.output_root + '_full.txt','w',buffering=-1)
 
 
 for index,l in np.ndenumerate(lgrid):
 
     b= bgrid[index]
+    pn = "neg"
+    if b>0:
+        pn = "pos"
+    
     fieldsNew = fields.copy(deep=True)
     #print("fieldsNew before")
     #print(fieldsNew)
     fieldsNew.loc[freeMask,'l'] += (l-lcenter)
     fieldsNew.loc[freeMask,'b'] += (b-bcenter)
+    if index==0:
+        print(l,b,"fieldsNew")
+        print(fieldsNew)
     #print("after")
     #print(fieldsNew)
     #print("")
@@ -263,6 +273,7 @@ for index,l in np.ndenumerate(lgrid):
     bestYield=-0.001
     bestCadence = args.cadence_bounds[1]
     bestNread = 1
+    
 
     if args.fix_cadence_texp:
         cadence = Cadence0
@@ -274,10 +285,10 @@ for index,l in np.ndenumerate(lgrid):
         print(bestNread*args.read_time,bestCadence)
 
         if totalYield > allBestYield:
-            allBestYield = totalYield
-            allBestFields = fieldsNew.copy(deep=True)
-            allBestCadence = cadence
-            allBestNread = bestNread
+            allBestYield[pn] = totalYield
+            allBestFields[pn] = fieldsNew.copy(deep=True)
+            allBestCadence[pn] = cadence
+            allBestNread[pn] = bestNread
         
     else:
         for nread in range(args.nread_bounds[0],args.nread_bounds[1]+1):
@@ -289,17 +300,21 @@ for index,l in np.ndenumerate(lgrid):
                                  nread*args.read_time,texp0,alphaT)
                 #Compute the yield
                 totalYield, totalAreaPix, totalArea = handler.computeYield()
+                txtfile2.write("%g %g %d %g %g\n" % (l,b,nread,cadence,totalYield))
                 if totalYield > bestYield:
                     bestCadence = cadence
                     bestNread = nread
                     bestYield = totalYield
 
-                if totalYield > allBestYield:
-                    allBestYield = totalYield
-                    allBestFields = fieldsNew.copy(deep=True)
-                    allBestCadence = cadence
-                    allBestNread = nread
+                if totalYield > allBestYield[pn]:
+                    allBestYield[pn] = totalYield
+                    allBestFields[pn] = fieldsNew.copy(deep=True)
+                    allBestCadence[pn] = cadence
+                    allBestNread[pn] = nread
                 #txtfile.write("%g %g %d %g %g %g %g\n" % (l,b,nread,cadence,totalYield,totalAreaPix,totalArea))
+            else:
+                txtfile2.write("%g %g %d %g %g\n" % (l,b,nread,cadence,0.0))
+                
 
     cadencegrid[index] = bestCadence
     nreadgrid[index] = bestNread
@@ -309,12 +324,14 @@ for index,l in np.ndenumerate(lgrid):
     txtfile.write("%g %g %d %g %g\n" % (l,b,bestNread,bestCadence,bestYield))
 
 
-handler.fromCentersChips(allBestFields,romanFoV,ym,debug=args.debug)
-print("Best yield: ",allBestYield)
-print("Best cadence: ",allBestCadence)
-print("Best Nread (texp): %d (%g s)" % (allBestNread,allBestNread*args.read_time))
-print("Best fields:")
-print(allBestFields)
+location = {"pos":"North","neg":"South"}
+for pn in ["pos","neg"]:
+    handler.fromCentersChips(allBestFields[pn],romanFoV,ym,debug=args.debug)
+    print(f"{location[pn]} Best yield: ",allBestYield[pn])
+    print(f"{location[pn]} Best cadence: ",allBestCadence[pn])
+    print(f"{location[pn]} Best Nread (texp): %d (%g s)" % (allBestNread[pn],allBestNread[pn]*args.read_time))
+    print(f"{location[pn]} Best fields:")
+    print(allBestFields[pn])
     
 txtfile.close()
 with open(args.output_root + "_results.pkl",'wb') as pklhandle:
