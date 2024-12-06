@@ -61,8 +61,8 @@ if args.location[0] is not None:
         lcenter = 0.5*(np.max(fields.loc[freeMask,'l'])+np.min(fields.loc[freeMask,'l']))
         bcenter = 0.5*(np.max(fields.loc[freeMask,'b'])+np.min(fields.loc[freeMask,'b']))
     
-    fields['l'] += args.location[0]-lcenter
-    fields['b'] += args.location[1]-bcenter
+    fields['l'][freeMask] += args.location[0]-lcenter
+    fields['b'][freeMask] += args.location[1]-bcenter
 
 handler = fovHandler()
 
@@ -72,7 +72,11 @@ handler.yieldMap.covfac = np.zeros(handler.yieldMap.yieldmap.shape)
 totalYieldtmp, totalAreaPixtmp, totalAreatmp = handler.computeYield(True)
 
 covfac = pd.DataFrame({'l':handler.yieldMap.llist,'b':handler.yieldMap.blist,'covfac':handler.yieldMap.covfac.flatten()})
-covfac.to_csv(args.out_file,index=False)
+collist = ['l','b','covfac']
+if {'ID_src'}.issubset(handler.yieldMap.lbmap.columns):
+    covfac['ID_src'] = handler.yieldMap.lbmap['ID_src'].astype(int)
+    collist = ['ID_src','l','b','covfac']
+covfac[collist].to_csv(args.out_file,index=False)
                     
 
 
@@ -81,4 +85,7 @@ if args.plot:
     #Can pass this an ax if desired in a subplot
     plt.scatter(covfac['l'],covfac['b'],c=covfac['covfac'],s=20,marker='s')
     plt.gca().set_aspect('equal')
+    plt.gca().invert_xaxis()
+    plt.xlabel('l (deg)')
+    plt.ylabel('b (deg)')
     plt.show()

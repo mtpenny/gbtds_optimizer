@@ -43,13 +43,19 @@ class fov:
         self.nChips=0
 
         for line in f:
+
+            if len(line.strip())>0 and line.strip()[0] in ('#'):
+                continue
+            
             if nv==0:
                 vl = []
                 vb = []
                 vn = []
     
-            if not line in ('\n', '\r\n'):
-                lsplit = line.split(" ")
+            if (not line in ('\n', '\r\n')): 
+                #print(line)
+                lsplit = line.split()
+                #print(lsplit)
                 vn.append(lsplit[name_col])
                 vl.append(lsplit[delta_l_col])
                 vb.append(lsplit[delta_b_col])
@@ -126,12 +132,15 @@ class fovHandler:
         #print(centers)
 
         for idx,row in centers.iterrows():
+            #print(chips.nChips)
             for i in range(chips.nChips):
                 self.lpix.append(yieldMap.l2x(row['l']
                                            +chips.delta_l[i]))
                 self.bpix.append(yieldMap.b2y(row['b']
                                            +chips.delta_b[i]))
+            #print(i)
             self.chip.append(chips.chip[i])
+            #print(self.chip)
             self.field.append(row['field'])
 
         self.lpix = np.array(self.lpix)

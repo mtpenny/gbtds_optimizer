@@ -48,6 +48,9 @@ for nf in nfields:
             output['b'] = b
             output['fixed'] = fixed
 
+            output['l'] -= 0.5*(output['l'].min()+output['l'].max())
+            output['b'] -= 0.5*(output['b'].min()+output['b'].max())
+
             #print(output)
 
             fname = f'field_layouts/{nf}fields/layout_{nf}f_{nupper}{letters[let]}.centers'

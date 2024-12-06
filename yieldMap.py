@@ -32,10 +32,9 @@ class yieldMap:
         #Read the map and account for different formats
         try:
             self.lbmap_orig = pd.read_csv(self.filename,
-                                          usecols=['l','b','yield','alphaTexp',
-                                                   'alphaCadence'],
                                           on_bad_lines='error',
                                           dtype=float,**read_csv_kwargs)
+            #usecols=['l','b','yield','alphaTexp','alphaCadence'],
 
             if {'l','b','yield','alphaTexp','alphaCadence'}.issubset(self.lbmap_orig.columns):
                 acceptable=True
@@ -83,8 +82,8 @@ class yieldMap:
             except:
                 raise RuntimeError('Error reading yieldMap file (%s). Try checking its formatting. It must have l,b, and yield columns, and can optionally have alphaTexp and alphaCadence columns too.' % (self.filename))
 
-        print(self.lbmap_orig)
-        print(self.lbmap_orig.shape)
+        #print(self.lbmap_orig)
+        #print(self.lbmap_orig.shape)
 
         if units=='per_deg2' or units=='per-deg2' or units=='per_deg' or units=='per-deg':
             self.lpix = np.unique(self.lbmap_orig['l']) #Unique returns sorted list
@@ -120,6 +119,7 @@ class yieldMap:
                                ignore_index=True)
 
         #The map coordinates and values in 1d form
+        
         self.llist = self.lbmap['l']
         self.blist = self.lbmap['b']
         self.yieldlist = self.lbmap['yield']
