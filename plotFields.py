@@ -24,7 +24,7 @@ parser.add_argument('--lrange',nargs=2,default=[3.0,-3.0],type=float,
                     help='Range of l')
 parser.add_argument('--brange',nargs=2,default=[-3.0,3.0],type=float,
                     help='Range of b')
-parser.add_argument('--cblabel',default=r'Yield per survey per map tile',type='str',
+parser.add_argument('--cblabel',default=r'Yield per survey per map tile',type=str,
                     help='Change the text of the colorbar label')
 
 args = parser.parse_args()
@@ -51,37 +51,39 @@ except:
 print("Shift:",location[0],location[1])
     
 notfixed = (fields['fixed'] == 0)
-print(fields[['l','b']])
-print(notfixed)
+#print(fields[['l','b']])
+#print(notfixed)
 shiftl = np.zeros(fields['l'].shape)
 shiftb = np.zeros(fields['b'].shape)
 shiftl[notfixed] = location[0]
 shiftb[notfixed] = location[1]
 fields['l'] += shiftl
 fields['b'] += shiftb
-print(fields[['l','b']])
+print("Fields:")
+print(fields[['l','b','fixed']])
 
 handler = fovHandler()
 
 handler.fromCentersChips(fields,romanFoV,ym)
 
 plt.figure()
-plt.rcParams["font.family"] = 'serif'
-plt.rcParams["font.serif"] = 'Times'
+#plt.rcParams["font.family"] = 'serif'
+#plt.rcParams["font.serif"] = 'Times'
+plt.rcParams["mathtext.fontset"] = 'cm'
+plt.rcParams["font.family"] = 'STIXGeneral'
 plt.rcParams["font.size"] = 16
 #plt.rcParams['lines.linewidth'] = 5
 lw = 3
 plt.rcParams['axes.linewidth'] = lw
 #Can pass this an ax if desired in a subplot
 ymap = handler.yieldMap.plotMap(pcolormesh_kwargs={'cmap':cm.gray_r})
-handler.plotFields(plot_kwargs={'color':'r','linestyle':'-','lw':0.5})
+handler.plotFields(plot_kwargs={'color':'r','linestyle':'-','lw':2})
 plt.xlim(args.lrange)
 plt.ylim(args.brange)
 plt.gca().set_aspect('equal')
 plt.xlabel('l (deg)')
 plt.ylabel('b (deg)')
-plt.colorbar(label='Yield per survey per map tile')
-#plt.gca().invert_xaxis()
+plt.colorbar(label=args.cblabel)
 ax = plt.gca()
 ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
 ax.yaxis.set_major_locator(ticker.MultipleLocator(1.0))
