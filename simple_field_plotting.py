@@ -3,7 +3,6 @@ import pandas as pd
 
 sca = pd.read_csv('outline_sca_layout.txt',sep='\s+',header=None)
 fields = pd.read_csv('field_layouts/layout_163000.centers',sep='\s+')
-print(fields['l'])
 
 plt.figure()
 
