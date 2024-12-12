@@ -22,9 +22,27 @@ read lmin lcent lmax bmin bcent bmax < <(awk 'BEGIN{lmin=1e50; lmax=-1e50; bmin=
 
 read padlm padlp padbm padbp < <(awk 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bmax=-1e50}NF==3{if($2<lmin) lmin=$2; if($2>lmax) lmax=$2; if($3<bmin) bmin=$3; if($3>bmax) bmax=$3;}END{print lmin,lmax,bmin,bmax}' sca_layout.txt)
 
-read maplmin maplmax mapbmin mapbmax < <(awk -v FS=',' 'BEGIN{lmin=1e50; lmax=-1e50; bmin=1e50; bmax=-1e50}NR>1{if($1<lmin) lmin=$1; if($1>lmax) lmax=$1; if($2<bmin) bmin=$2; if($2>bmax) bmax=$2;}END{print lmin,lmax,bmin,bmax}' $map_file)
+read maplmin maplmax mapbmin mapbmax < <(awk -v FS=',' 'BEGIN{
+lmin=1e50; 
+lmax=-1e50; 
+bmin=1e50; 
+bmax=-1e50; 
+lc=1; 
+bc=1}
+{
+if(NR==1){
+  for(i=1;i<=NF;i++){
+    if($(i)=="l") lc=i; 
+    if($(i)=="b") bc=i
+  }
+}else{
+if($(lc)<lmin) lmin=$(lc); 
+if($(lc)>lmax) lmax=$(lc); 
+if($(bc)<bmin) bmin=$(bc); 
+if($(bc)>bmax) bmax=$(bc);
+}}END{print lmin,lmax,bmin,bmax}' $map_file)
 
-step=1.0
+step=0.2
 
 lrange=$(echo 1 | awk -v lmin=$lmin -v lmax=$lmax -v lcent=$lcent -v padlm=$padlm -v padlp=$padlp -v maplmin=$maplmin -v maplmax=$maplmax -v step=$step 'function floor(x){if(x<0){if(int(x)==x) return int(x); else return int(x)-1}else return int(x)}{maxf=maplmax-padlp-(lmax-lcent); minf=maplmin-padlm-(lmin-lcent); print step*floor(maxf/step),-step*floor(-minf/step)}')
 
