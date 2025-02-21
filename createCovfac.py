@@ -77,6 +77,9 @@ if {'ID_src'}.issubset(handler.yieldMap.lbmap.columns):
     covfac['ID_src'] = handler.yieldMap.lbmap['ID_src'].astype(int)
     collist = ['ID_src','l','b','covfac']
 covfac[collist].to_csv(args.out_file,index=False)
+
+#Create a centers file too
+fields.to_csv(args.out_file + '.centers',index=False)
                     
 
 
