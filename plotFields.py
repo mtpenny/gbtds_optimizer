@@ -17,7 +17,7 @@ parser.add_argument('fields_filename',
 parser.add_argument('--sca-filename',default='sca_layout.txt',
                     help='Filename of the sca vertices')
 parser.add_argument('--save',default=None,
-                    help='Filename of the sca vertices')
+                    help='Filename for saving the plot')
 parser.add_argument('--location',nargs=2,default=[None,None],type=float,
                     help='Placement of the field - provide l and b as arguments. If no arguments, it is assumed the field will be at the position in the layout file')
 parser.add_argument('--lrange',nargs=2,default=[3.0,-3.0],type=float,
@@ -44,7 +44,7 @@ try:
                          dtype={'field':str,'l':float,'b':float,'fixed':int})
 except:
     try:
-        fields = pd.read_csv(args.fields_filename,sep=r'\s+')
+        fields = pd.read_csv(args.fields_filename)
     except:
         raise RuntimeError('Error reading fields file (%s) - file does not exist or is in an incorrect format. It should containt the named columns ["field","l","b","fixed"] or 4 unnamed columns' % (args.fields_filename))
 
